@@ -1,0 +1,3353 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bun Venit — Platforma ta de entertainment</title>
+  <meta name="description" content="Platforma all-in-one pentru filme, seriale, Live TV, addon-uri și colecții complete.">
+  <meta property="og:title" content="Bun Venit — Platforma ta de entertainment">
+  <meta property="og:description" content="Filme, Live TV, addon-uri și colecții complete. Totul într-un singur loc.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#127916;</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #1a1a2e; line-height: 1.6; overflow-x: hidden;
+      background: #14141f;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1a2e; }
+    ::-webkit-scrollbar-thumb { background: #3a3a5c; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    #scrollProgress {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, #e94560, #ff6b6b);
+      z-index: 9999; width: 0%; transition: width 0.1s;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+      background: #0a0a16; color: rgba(255,255,255,0.8); z-index: 1000;
+      transition: transform 0.3s ease; overflow-y: auto;
+      display: flex; flex-direction: column;
+      border-right: 1px solid rgba(255,255,255,0.04);
+    }
+    .sidebar.closed { transform: translateX(-260px); }
+    .sidebar-header {
+      padding: 1.2rem 1.2rem 1rem; font-size: 1.15rem; font-weight: 700;
+      color: white; border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .sidebar-header .close-btn {
+      background: none; border: none; color: rgba(255,255,255,0.4);
+      font-size: 1.3rem; cursor: pointer; line-height: 1;
+    }
+    .sidebar-header .close-btn:hover { color: white; }
+    .sidebar-menu { padding: 0.5rem 0; flex: 1; }
+    .sidebar-menu a {
+      display: block; padding: 0.6rem 1.5rem;
+      color: rgba(255,255,255,0.6); text-decoration: none;
+      font-size: 0.9rem; transition: background 0.2s, color 0.2s; cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu a:hover {
+      background: rgba(233,69,150,0.06); color: white;
+      border-left-color: #e94560;
+    }
+    .sidebar-menu a::before {
+      content: ""; display: inline-block; width: 5px; height: 5px;
+      border-radius: 50%; background: rgba(255,255,255,0.15);
+      margin-right: 10px; vertical-align: middle;
+    }
+
+    .toggle-btn {
+      position: fixed; top: 1rem; left: 1rem; z-index: 1100;
+      background: rgba(10,10,22,0.85); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.08); color: white;
+      width: 40px; height: 40px; border-radius: 10px; font-size: 1.2rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: left 0.3s ease, background 0.2s, opacity 0.3s;
+    }
+    .toggle-btn.shifted { left: 270px; }
+    .toggle-btn.hide { opacity: 0; pointer-events: none; }
+    .toggle-btn:hover { background: #302b63; border-color: #e94560; }
+
+    .main-content { transition: margin-left 0.3s ease; min-height: 100vh; padding-top: 56px; }
+    .main-content.shifted { margin-left: 260px; }
+
+    /* ===== FAZA 5: STICKY HEADER ===== */
+    .sticky-header {
+      position: fixed; top: 0; left: 0; right: 0; height: 56px;
+      z-index: 900; display: flex; align-items: center;
+      padding: 0 1rem 0 4rem;
+      background: linear-gradient(180deg, rgba(10,10,22,0.95) 0%, rgba(10,10,22,0.7) 100%);
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s ease, background 0.3s;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .sticky-header.hidden {
+      transform: translateY(-100%);
+    }
+
+    .sticky-header .logo {
+      font-size: 1.15rem; font-weight: 800; color: white;
+      margin-right: 1.5rem; white-space: nowrap;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+
+    .sticky-header .logo span { color: #e94560; }
+
+    .sticky-header .search-wrap {
+      flex: 1; max-width: 420px; position: relative;
+    }
+
+    .sticky-header .search-wrap input {
+      width: 100%; padding: 0.5rem 1rem 0.5rem 2.2rem;
+      border-radius: 20px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06); color: white;
+      font-size: 0.85rem; outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .sticky-header .search-wrap input::placeholder { color: rgba(255,255,255,0.3); }
+    .sticky-header .search-wrap input:focus {
+      border-color: rgba(233,69,150,0.4);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .sticky-header .search-wrap .search-icon {
+      position: absolute; left: 0.75rem; top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.3); font-size: 0.85rem;
+    }
+
+    .sticky-header .header-actions {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-left: auto;
+    }
+
+    .sticky-header .header-actions button {
+      background: none; border: none; color: rgba(255,255,255,0.6);
+      font-size: 1rem; cursor: pointer; padding: 0.3rem;
+      transition: color 0.2s; position: relative;
+    }
+
+    .sticky-header .header-actions button:hover { color: white; }
+
+    .sticky-header .header-actions .watchlist-btn .badge {
+      position: absolute; top: -2px; right: -6px;
+      background: #e94560; color: white; font-size: 0.55rem;
+      padding: 0.1rem 0.3rem; border-radius: 6px; font-weight: 700;
+      min-width: 14px; text-align: center;
+    }
+
+    .sticky-header .header-actions .profile {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, #302b63, #e94560);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; border: 2px solid rgba(255,255,255,0.1);
+      transition: border-color 0.2s;
+    }
+
+    .sticky-header .header-actions .profile:hover { border-color: #e94560; }
+
+    /* Search results dropdown */
+    .search-results {
+      position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+      background: #1a1a2e; border-radius: 10px; overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: none; z-index: 10;
+    }
+
+    .search-results.visible { display: block; }
+
+    .search-results .sr-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.6rem 0.8rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .search-results .sr-item:hover { background: rgba(255,255,255,0.04); }
+
+    .search-results .sr-item .thumb {
+      width: 36px; height: 50px; border-radius: 4px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .search-results .sr-item .text { flex: 1; min-width: 0; }
+    .search-results .sr-item .text strong { display: block; color: #eee; font-size: 0.82rem; }
+    .search-results .sr-item .text span { color: #777; font-size: 0.72rem; }
+
+    /* Rating thumbs on cards */
+    .content-card .card-actions {
+      display: flex; gap: 0.2rem; margin-top: 0.3rem; opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .content-card:hover .card-actions { opacity: 1; }
+
+    .content-card .card-actions button {
+      background: none; border: none; color: rgba(255,255,255,0.3);
+      font-size: 0.7rem; cursor: pointer; padding: 0.1rem;
+      transition: color 0.2s;
+    }
+
+    .content-card .card-actions button:hover { color: #e94560; }
+    .content-card .card-actions button.liked { color: #4ecdc4; }
+    .content-card .card-actions button.disliked { color: #e94560; }
+
+    /* Watchlist notification */
+    .wl-toast {
+      position: fixed; bottom: 5rem; right: 2rem;
+      background: #1a1a2e; color: white; padding: 0.6rem 1.2rem;
+      border-radius: 8px; font-size: 0.85rem;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 1200; pointer-events: none;
+    }
+
+    .wl-toast.visible { opacity: 1; transform: translateY(0); }
+    .wl-toast span { color: #e94560; font-weight: 600; }
+
+    /* ===== FAZA 6: SKELETON LOADING ===== */
+    .skeleton {
+      background: linear-gradient(90deg, #1a1a2e 25%, #2a2a3e 50%, #1a1a2e 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-poster {
+      width: 100%; aspect-ratio: 2/3; border-radius: 6px;
+    }
+
+    .skeleton-text {
+      height: 12px; border-radius: 4px; margin-top: 8px; width: 70%;
+    }
+
+    .skeleton-text.short { width: 45%; }
+
+    .content-section.loading .row-scroll {
+      display: flex; gap: 0.5rem;
+    }
+
+    .content-section.loading .row-scroll .skeleton-card {
+      flex: 0 0 180px;
+    }
+
+    /* Cloud Section */
+    .cloud-section {
+      background: linear-gradient(135deg, #0a0a16, #1a1a3e);
+      padding: 3rem 2rem; margin: 1rem 0; color: white;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .cloud-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 2rem; max-width: 1000px; margin: 0 auto;
+      align-items: center;
+    }
+
+    .cloud-info h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .cloud-info h2 span { color: #e94560; }
+    .cloud-info p { color: rgba(255,255,255,0.55); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .cloud-info .cloud-stats { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .cloud-info .cloud-stats .stat { text-align: center; }
+    .cloud-info .cloud-stats .stat strong { display: block; font-size: 1.5rem; color: #e94560; }
+    .cloud-info .cloud-stats .stat span { font-size: 0.78rem; color: rgba(255,255,255,0.4); }
+    .cloud-visual {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5rem; opacity: 0.6;
+    }
+
+    /* Channels grid */
+    .channel-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .channel-item {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 1rem 0.5rem;
+      text-align: center; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .channel-item:hover {
+      background: rgba(255,255,255,0.06); border-color: rgba(233,69,150,0.2);
+    }
+
+    .channel-item .ch-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .channel-item .ch-name { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+    .channel-item .ch-type { font-size: 0.6rem; color: rgba(255,255,255,0.25); }
+
+    /* Polish: subtle border glows, transitions */
+    .content-card {
+      will-change: transform;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 6px;
+      background: linear-gradient(90deg, #e94560, #302b63, #e94560);
+      background-size: 200% 100%;
+      animation: borderGlow 3s ease infinite;
+      z-index: 6;
+    }
+
+    @keyframes borderGlow {
+      0%, 100% { background-position: 0% 0; }
+      50% { background-position: 100% 0; }
+    }
+
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #14141f; z-index: 10000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 0.6s ease;
+    }
+
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+    .loading-overlay .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.05);
+      border-top-color: #e94560;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay p { color: rgba(255,255,255,0.3); font-size: 0.85rem; }
+
+    /* ===== FAZA 16: LOGIN MODAL ===== */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+      z-index: 10001; display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .auth-modal {
+      background: #1a1a2e; border-radius: 16px; padding: 2rem; width: 380px;
+      max-width: 90vw; border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .auth-modal .am-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .auth-modal .am-header h2 { color: white; font-size: 1.3rem; }
+    .auth-modal .am-header .am-close { background: none; border: none; color: rgba(255,255,255,0.3); font-size: 1.2rem; cursor: pointer; }
+    .auth-modal .am-header .am-close:hover { color: white; }
+    .auth-modal .am-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .auth-modal .am-tabs span { padding: 0.5rem 1rem; cursor: pointer; color: rgba(255,255,255,0.4); font-size: 0.9rem; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .auth-modal .am-tabs span.active { color: white; border-bottom-color: #e94560; }
+    .auth-modal .am-field { margin-bottom: 1rem; }
+    .auth-modal .am-field label { display: block; color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-bottom: 0.3rem; }
+    .auth-modal .am-field input {
+      width: 100%; padding: 0.7rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04); color: white; font-size: 0.9rem; outline: none;
+    }
+    .auth-modal .am-field input:focus { border-color: rgba(233,69,150,0.3); }
+    .auth-modal .am-btn {
+      width: 100%; padding: 0.7rem; background: #e94560; color: white; border: none;
+      border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.5rem;
+    }
+    .auth-modal .am-btn:hover { background: #d63850; }
+    .auth-modal .am-divider { text-align: center; color: rgba(255,255,255,0.2); font-size: 0.8rem; margin: 1rem 0; position: relative; }
+    .auth-modal .am-divider::before, .auth-modal .am-divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: rgba(255,255,255,0.06); }
+    .auth-modal .am-divider::before { left: 0; }
+    .auth-modal .am-divider::after { right: 0; }
+    .auth-modal .am-social { display: flex; gap: 0.5rem; }
+    .auth-modal .am-social button { flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: white; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; }
+    .auth-modal .am-social button:hover { background: rgba(255,255,255,0.04); }
+
+    /* Profile dropdown */
+    .profile-wrap { position: relative; }
+    .profile-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0; width: 200px;
+      background: #1a1a2e; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4); display: none; z-index: 1200; overflow: hidden;
+    }
+    .profile-dropdown.open { display: block; }
+    .profile-dropdown .pd-item { padding: 0.6rem 1rem; color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; gap: 0.5rem; }
+    .profile-dropdown .pd-item:hover { background: rgba(255,255,255,0.04); color: white; }
+    .profile-dropdown .pd-item.pd-divider { border-top: 1px solid rgba(255,255,255,0.04); padding: 0; margin: 0.3rem 0; cursor: default; }
+    .profile-dropdown .pd-user { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .profile-dropdown .pd-user strong { display: block; color: white; font-size: 0.9rem; }
+    .profile-dropdown .pd-user span { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+
+    /* ===== FAZA 17: PLAYER OVERLAY ===== */
+    .player-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #000; z-index: 9999; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+    }
+    .player-overlay.open { display: flex; }
+    .player-overlay .player-close {
+      position: absolute; top: 1rem; right: 1rem; z-index: 10;
+      background: rgba(255,255,255,0.06); border: none; color: white;
+      width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .player-overlay .player-close:hover { background: rgba(233,69,96,0.5); }
+    .player-overlay .player-screen {
+      width: 80%; max-width: 1000px; aspect-ratio: 16/9;
+      background: #0a0a16; border-radius: 12px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0.5rem; position: relative;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .player-overlay .player-screen .big-play {
+      width: 70px; height: 70px; border-radius: 50%;
+      background: rgba(233,69,96,0.9); border: 3px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; color: white; cursor: pointer;
+      box-shadow: 0 0 40px rgba(233,69,96,0.3);
+    }
+    .player-overlay .player-screen .big-play:hover { transform: scale(1.05); }
+    .player-overlay .player-screen .player-title { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+    .player-overlay .player-controls {
+      width: 80%; max-width: 1000px; margin-top: 0.8rem;
+      display: flex; align-items: center; gap: 1rem; color: rgba(255,255,255,0.6);
+    }
+    .player-overlay .player-controls .pc-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; cursor: pointer; position: relative; }
+    .player-overlay .player-controls .pc-bar .pc-fill { height: 100%; width: 0%; background: #e94560; border-radius: 2px; }
+    .player-overlay .player-controls .pc-time { font-size: 0.8rem; min-width: 80px; }
+    .player-overlay .player-controls button { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 1rem; padding: 0.3rem; transition: color 0.2s; }
+    .player-overlay .player-controls button:hover { color: white; }
+
+    /* ===== FAZA 18: ADVANCED SEARCH ===== */
+    .adv-search-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
+    .adv-search-filters select, .adv-search-filters input {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      color: white; padding: 0.5rem 0.8rem; border-radius: 8px; font-size: 0.82rem; outline: none;
+    }
+    .adv-search-filters select option { background: #1a1a2e; }
+    .adv-search-filters .adv-search-btn {
+      background: #e94560; color: white; border: none; padding: 0.5rem 1rem;
+      border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.82rem;
+    }
+    .adv-search-filters .adv-search-btn:hover { background: #d63850; }
+
+    /* ===== FAZA 19: EPG ===== */
+    .epg-list { display: flex; flex-direction: column; gap: 2px; }
+    .epg-item {
+      display: flex; align-items: center; gap: 1rem;
+      background: rgba(255,255,255,0.02); padding: 0.6rem 1rem;
+      border-radius: 8px; cursor: pointer; transition: background 0.15s;
+    }
+    .epg-item:hover { background: rgba(255,255,255,0.04); }
+    .epg-item .epg-time { color: rgba(255,255,255,0.3); font-size: 0.78rem; min-width: 48px; }
+    .epg-item .epg-now { color: #e94560; font-weight: 600; }
+    .epg-item .epg-name { color: rgba(255,255,255,0.7); font-size: 0.85rem; flex: 1; }
+    .epg-item .epg-next { color: rgba(255,255,255,0.35); font-size: 0.78rem; }
+
+    /* ===== FAZA 20: KEYBOARD SHORTCUTS ===== */
+    .shortcuts-modal {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: #1a1a2e; border-radius: 16px; padding: 2rem; width: 400px;
+      max-width: 90vw; border: 1px solid rgba(255,255,255,0.06); z-index: 10002;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: none;
+    }
+    .shortcuts-modal.open { display: block; }
+    .shortcuts-modal h2 { color: white; font-size: 1.2rem; margin-bottom: 1rem; }
+    .shortcuts-modal .sc-grid { display: grid; gap: 0.5rem; }
+    .shortcuts-modal .sc-row { display: flex; justify-content: space-between; align-items: center; }
+    .shortcuts-modal .sc-row .sc-key { background: rgba(255,255,255,0.06); padding: 0.2rem 0.6rem; border-radius: 4px; color: rgba(255,255,255,0.7); font-size: 0.8rem; font-family: monospace; }
+    .shortcuts-modal .sc-row .sc-desc { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+    .shortcuts-modal .sc-close { margin-top: 1rem; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; cursor: pointer; }
+
+    /* ===== FAZA 22: NOTIFICATIONS ===== */
+    .notif-panel {
+      position: fixed; top: 60px; right: 1rem; width: 340px; max-height: 400px;
+      overflow-y: auto; background: #1a1a2e; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      display: none; z-index: 1100;
+    }
+    .notif-panel.open { display: block; }
+    .notif-panel .np-header { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; }
+    .notif-panel .np-header h3 { color: white; font-size: 0.9rem; }
+    .notif-panel .np-header span { color: rgba(255,255,255,0.3); font-size: 0.75rem; cursor: pointer; }
+    .notif-item { padding: 0.7rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.02); display: flex; gap: 0.6rem; align-items: flex-start; }
+    .notif-item .ni-dot { width: 8px; height: 8px; border-radius: 50%; background: #e94560; margin-top: 5px; flex-shrink: 0; }
+    .notif-item .ni-text { flex: 1; }
+    .notif-item .ni-text strong { display: block; color: white; font-size: 0.82rem; }
+    .notif-item .ni-text span { color: rgba(255,255,255,0.35); font-size: 0.72rem; }
+
+    /* ===== FAZA 23: QUALITY SELECTOR ===== */
+    .quality-selector {
+      display: flex; gap: 0.3rem; flex-wrap: wrap;
+    }
+    .quality-selector .qs-opt {
+      padding: 0.3rem 0.8rem; border-radius: 6px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+      font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+    }
+    .quality-selector .qs-opt:hover { border-color: rgba(233,69,150,0.3); color: white; }
+    .quality-selector .qs-opt.active { background: #e94560; border-color: #e94560; color: white; }
+
+    /* ===== PAGE SYSTEM ===== */
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header {
+      padding: 6rem 5% 1.5rem; color: white; max-width: 1200px; margin: 0 auto;
+    }
+    .page-header h1 { font-size: 2rem; margin-bottom: 0.3rem; }
+    .page-header p { color: rgba(255,255,255,0.5); font-size: 0.95rem; }
+    .page-body { max-width: 1200px; margin: 0 auto; padding: 0 5% 3rem; }
+
+    /* Settings */
+    .settings-grid { display: grid; gap: 1rem; }
+    .setting-item {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 1.2rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .setting-item .si-left h3 { color: white; font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .setting-item .si-left p { color: rgba(255,255,255,0.4); font-size: 0.8rem; }
+    .toggle-switch {
+      width: 44px; height: 24px; border-radius: 12px; background: rgba(255,255,255,0.1);
+      cursor: pointer; position: relative; transition: background 0.3s; flex-shrink: 0;
+    }
+    .toggle-switch.on { background: #e94560; }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 50%; background: white;
+      transition: transform 0.3s;
+    }
+    .toggle-switch.on::after { transform: translateX(20px); }
+    .select-input {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: white; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem;
+      cursor: pointer; outline: none;
+    }
+    .select-input option { background: #1a1a2e; color: white; }
+
+    /* Upload */
+    .upload-zone {
+      border: 2px dashed rgba(255,255,255,0.12); border-radius: 16px;
+      padding: 3rem; text-align: center; cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .upload-zone:hover { border-color: #e94560; background: rgba(233,69,96,0.04); }
+    .upload-zone .uz-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .upload-zone h3 { color: white; margin-bottom: 0.3rem; }
+    .upload-zone p { color: rgba(255,255,255,0.4); font-size: 0.85rem; }
+    .upload-form { margin-top: 1.5rem; display: grid; gap: 0.8rem; }
+    .upload-form input, .upload-form select {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      color: white; padding: 0.7rem 1rem; border-radius: 8px; font-size: 0.9rem; outline: none;
+    }
+    .upload-form input::placeholder { color: rgba(255,255,255,0.25); }
+    .upload-btn {
+      background: #e94560; color: white; border: none; padding: 0.7rem;
+      border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .upload-btn:hover { background: #d63850; }
+
+    /* Addon cards */
+    .addon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .addon-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .addon-card:hover { border-color: #e94560; transform: translateY(-3px); }
+    .addon-card .ac-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .addon-card h4 { color: white; font-size: 0.9rem; margin-bottom: 0.2rem; }
+    .addon-card p { color: rgba(255,255,255,0.4); font-size: 0.75rem; }
+    .addon-card .ac-status {
+      display: inline-block; margin-top: 0.5rem; font-size: 0.65rem;
+      padding: 0.15rem 0.5rem; border-radius: 4px;
+    }
+    .ac-status.installed { background: rgba(78,205,196,0.15); color: #4ecdc4; }
+    .ac-status.available { background: rgba(233,69,150,0.15); color: #e94560; }
+
+    /* Live TV grid */
+    .tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem; }
+    .tv-channel {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 1rem; text-align: center; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .tv-channel:hover { border-color: rgba(233,69,150,0.3); }
+    .tv-channel .tv-logo { font-size: 1.8rem; margin-bottom: 0.3rem; }
+    .tv-channel .tv-name { color: white; font-size: 0.8rem; }
+    .tv-channel .tv-now { color: rgba(255,255,255,0.35); font-size: 0.65rem; margin-top: 0.2rem; }
+
+    /* Content filter tabs */
+    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .filter-tab {
+      padding: 0.4rem 1rem; border-radius: 20px; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+      font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-tab:hover { border-color: rgba(233,69,150,0.3); color: white; }
+    .filter-tab.active { background: #e94560; border-color: #e94560; color: white; }
+    .content-grid-view {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem;
+    }
+
+    /* Cloud */
+    .cloud-stats-bar {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .cloud-stat-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px; padding: 1.2rem 1.5rem;
+    }
+    .cloud-stat-card .csc-num { font-size: 1.8rem; font-weight: 700; color: #e94560; }
+    .cloud-stat-card .csc-label { color: rgba(255,255,255,0.4); font-size: 0.78rem; margin-top: 0.2rem; }
+
+    /* ===== FAZA 1: HERO BANNER NETFLIX-STYLE ===== */
+    .hero-banner {
+      position: relative; width: 100%; height: 85vh; min-height: 500px;
+      overflow: hidden; background: #0a0a16;
+    }
+
+    .hero-slides {
+      position: relative; width: 100%; height: 100%;
+    }
+
+    .hero-slide {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0; transition: opacity 0.8s ease;
+      display: flex; align-items: center;
+      padding: 0 5%;
+    }
+
+    .hero-slide.active {
+      opacity: 1; z-index: 2;
+    }
+
+    .hero-slide .bg {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background-size: cover; background-position: center;
+      filter: brightness(0.45) saturate(1.1);
+      transform: scale(1.05);
+    }
+
+    .hero-slide .bg-inner {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(90deg, #0a0a16 0%, rgba(10,10,22,0.4) 50%, rgba(10,10,22,0.1) 100%),
+                  linear-gradient(180deg, rgba(10,10,22,0) 0%, rgba(10,10,22,0.8) 100%);
+    }
+
+    .hero-slide .overlay-grad {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 200px;
+      background: linear-gradient(180deg, transparent 0%, #14141f 100%);
+      z-index: 3;
+    }
+
+    .hero-content {
+      position: relative; z-index: 4; max-width: 600px;
+      transform: translateY(30px); opacity: 0;
+      transition: transform 0.7s ease 0.15s, opacity 0.7s ease 0.15s;
+    }
+
+    .hero-slide.active .hero-content {
+      transform: translateY(0); opacity: 1;
+    }
+
+    .hero-badge-row {
+      display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .hero-badge {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-badge.year { background: rgba(255,255,255,0.1); color: #ccc; }
+    .hero-badge.hd { background: #e94560; color: white; }
+    .hero-badge.fhd { background: #302b63; color: white; }
+    .hero-badge.fourk { background: #ff6b35; color: white; }
+    .hero-badge.maturity { border: 1px solid rgba(255,255,255,0.25); color: #aaa; background: transparent; }
+    .hero-badge.top10 { background: #e50914; color: white; }
+
+    .hero-title {
+      font-size: 4rem; font-weight: 800; color: white; margin-bottom: 0.5rem;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      line-height: 1.1;
+    }
+
+    .hero-meta {
+      display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;
+      font-size: 0.9rem; color: rgba(255,255,255,0.7); flex-wrap: wrap;
+    }
+
+    .hero-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: #666; }
+    .hero-meta .rating { color: #f5c842; font-weight: 600; }
+    .hero-meta .genre-tag {
+      padding: 0.15rem 0.5rem; background: rgba(255,255,255,0.08);
+      border-radius: 4px; font-size: 0.78rem; color: #ccc;
+    }
+
+    .hero-desc {
+      font-size: 1rem; color: rgba(255,255,255,0.65);
+      max-width: 520px; margin-bottom: 1.8rem; line-height: 1.5;
+    }
+
+    .hero-btns {
+      display: flex; gap: 0.8rem; flex-wrap: wrap;
+    }
+
+    .hero-btn {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      padding: 0.75rem 2rem; border-radius: 8px; font-size: 1rem;
+      font-weight: 600; border: none; cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .hero-btn:hover { transform: translateY(-2px); }
+
+    .hero-btn.play {
+      background: #e94560; color: white;
+    }
+    .hero-btn.play:hover { box-shadow: 0 6px 20px rgba(233,69,96,0.35); }
+
+    .hero-btn.list {
+      background: rgba(255,255,255,0.1); color: white;
+      backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.12);
+    }
+    .hero-btn.list:hover { background: rgba(255,255,255,0.18); }
+
+    .hero-btn.info {
+      background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
+      backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.08);
+    }
+    .hero-btn.info:hover { background: rgba(255,255,255,0.12); }
+
+    .hero-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      z-index: 5; background: rgba(0,0,0,0.3); border: none;
+      color: white; width: 44px; height: 44px; border-radius: 50%;
+      font-size: 1.2rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s; backdrop-filter: blur(4px);
+      opacity: 0; transition: opacity 0.3s, background 0.2s;
+    }
+
+    .hero-banner:hover .hero-nav { opacity: 1; }
+
+    .hero-nav:hover { background: rgba(233,69,96,0.5); }
+    .hero-nav.prev { left: 20px; }
+    .hero-nav.next { right: 20px; }
+
+    .hero-dots {
+      position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+      z-index: 5; display: flex; gap: 8px;
+    }
+
+    .hero-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); border: 2px solid transparent;
+      cursor: pointer; transition: all 0.3s;
+    }
+
+    .hero-dot.active {
+      background: #e94560; border-color: rgba(255,255,255,0.3);
+      box-shadow: 0 0 8px rgba(233,69,96,0.4);
+    }
+
+    .hero-dot:hover { background: rgba(255,255,255,0.4); }
+
+    /* SECTION COMMON */
+    .content-section {
+      padding: 0.5rem 0 2rem;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 3%; }
+
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.8rem; padding: 0;
+    }
+
+    .section-header h2 {
+      font-size: 1.4rem; font-weight: 700; color: white;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .section-header h2 .top10-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #e50914; color: white; font-size: 0.65rem;
+      padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700;
+    }
+
+    .section-header .see-all {
+      font-size: 0.82rem; color: rgba(255,255,255,0.5);
+      cursor: pointer; transition: color 0.2s;
+    }
+    .section-header .see-all:hover { color: #e94560; }
+
+    /* ROW SCROLL */
+    .row-scroll {
+      display: flex; gap: 0.5rem; overflow-x: auto;
+      padding: 0.5rem 0 1rem; scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .row-scroll::-webkit-scrollbar { height: 3px; }
+    .row-scroll::-webkit-scrollbar-track { background: transparent; }
+    .row-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* CONTENT CARD */
+    .content-card {
+      flex: 0 0 180px; scroll-snap-align: start;
+      border-radius: 6px; overflow: hidden; cursor: pointer;
+      position: relative; transition: transform 0.25s, box-shadow 0.25s;
+      background: #1a1a2e;
+    }
+
+    .content-card:hover {
+      transform: scale(1.08); z-index: 10;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+
+    .row-scroll .content-card:first-child:hover {
+      transform-origin: left center;
+    }
+    .row-scroll .content-card:last-child:hover {
+      transform-origin: right center;
+    }
+
+    .content-card .poster {
+      width: 100%; aspect-ratio: 2/3;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; position: relative;
+    }
+
+    .content-card .poster .play-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex;
+      align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.25s;
+    }
+
+    .content-card:hover .poster .play-overlay { opacity: 1; }
+
+    .content-card .poster .play-overlay .play-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(233,69,96,0.85); border: 2px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: white;
+      transform: scale(0.8); transition: transform 0.25s;
+    }
+
+    .content-card:hover .poster .play-overlay .play-icon { transform: scale(1); }
+
+    .content-card .info {
+      padding: 0.5rem 0.6rem 0.6rem;
+    }
+
+    .content-card .info h4 {
+      color: #eee; font-size: 0.82rem; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .content-card .info .meta-row {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.7rem; color: #777; margin-top: 0.15rem;
+    }
+
+    .content-card .progress-bar {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .content-card .progress-bar .fill {
+      height: 100%; background: #e94560;
+      transition: width 0.3s;
+    }
+
+    .content-card .badge-corner {
+      position: absolute; top: 6px; right: 6px;
+      font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.4rem;
+      border-radius: 3px; background: #e94560; color: white;
+    }
+
+    /* ===== FAZA 3: HOVER CARD POPUP ===== */
+    .hover-modal {
+      position: fixed; z-index: 999;
+      width: 280px; border-radius: 10px;
+      background: #1a1a2e; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .hover-modal.visible {
+      opacity: 1; visibility: visible; pointer-events: auto;
+    }
+
+    .hover-modal .hm-thumb {
+      width: 100%; aspect-ratio: 16/9;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; position: relative;
+    }
+
+    .hover-modal .hm-thumb .hm-play {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.25s;
+    }
+
+    .hover-modal .hm-thumb:hover .hm-play { opacity: 1; }
+
+    .hover-modal .hm-thumb .hm-play span {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(233,69,96,0.9); border: 2px solid white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: white; cursor: pointer;
+    }
+
+    .hover-modal .hm-body {
+      padding: 0.8rem 1rem 1rem;
+    }
+
+    .hover-modal .hm-btns {
+      display: flex; gap: 0.4rem; margin-bottom: 0.6rem;
+    }
+
+    .hover-modal .hm-btns button {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: transparent; color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; transition: background 0.2s, border-color 0.2s;
+    }
+
+    .hover-modal .hm-btns button:hover {
+      background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3);
+    }
+
+    .hover-modal .hm-btns .hm-play-btn {
+      width: auto; padding: 0 1rem; border-radius: 20px;
+      background: #e94560; border-color: #e94560; gap: 0.3rem;
+    }
+
+    .hover-modal .hm-btns .hm-play-btn:hover {
+      background: #d63850; border-color: #d63850;
+    }
+
+    .hover-modal .hm-title {
+      font-size: 0.95rem; font-weight: 600; color: white;
+      margin-bottom: 0.25rem;
+    }
+
+    .hover-modal .hm-meta {
+      font-size: 0.75rem; color: rgba(255,255,255,0.55);
+      display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+      margin-bottom: 0.4rem;
+    }
+
+    .hover-modal .hm-meta .hm-rating { color: #f5c842; }
+    .hover-modal .hm-meta .hm-tag {
+      padding: 0.1rem 0.35rem; background: rgba(255,255,255,0.06);
+      border-radius: 3px; font-size: 0.65rem; color: #aaa;
+    }
+
+    .hover-modal .hm-desc {
+      font-size: 0.78rem; color: rgba(255,255,255,0.5);
+      line-height: 1.4; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ===== FAZA 3 HOVER MODAL ===== */
+    .card-modal {
+      display: none;
+    }
+
+    /* NEWSLETTER */
+    .newsletter-section {
+      background: linear-gradient(135deg, #0f0c29, #302b63);
+      color: white; text-align: center; padding: 4rem 2rem; margin-top: 1rem;
+    }
+    .newsletter-section h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .newsletter-section p { opacity: 0.6; margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .newsletter-form {
+      display: flex; max-width: 440px; margin: 0 auto; gap: 0.5rem;
+    }
+    .newsletter-form input {
+      flex: 1; padding: 0.8rem 1.2rem; border: none; border-radius: 8px;
+      font-size: 0.9rem; outline: none;
+    }
+    .newsletter-form button {
+      padding: 0.8rem 1.5rem; background: #e94560; color: white;
+      border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .newsletter-form button:hover { background: #d63850; }
+
+    /* FOOTER */
+    footer {
+      background: #0a0a16; color: rgba(255,255,255,0.6);
+      padding: 3rem 2rem 1.5rem; border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .footer-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 2rem; max-width: 1200px; margin: 0 auto;
+    }
+    .footer-col h4 { color: white; margin-bottom: 0.8rem; font-size: 0.9rem; }
+    .footer-col p, .footer-col a {
+      font-size: 0.82rem; color: rgba(255,255,255,0.45);
+      text-decoration: none; display: block; margin-bottom: 0.35rem; cursor: default;
+    }
+    .footer-col a:hover { color: white; }
+    .footer-bottom {
+      text-align: center; margin-top: 2rem; padding-top: 1.2rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.8rem; color: rgba(255,255,255,0.35);
+    }
+
+    /* BACK TO TOP */
+    #backToTop {
+      position: fixed; bottom: 2rem; right: 2rem; width: 42px; height: 42px;
+      border-radius: 50%; background: #e94560; color: white; border: none;
+      font-size: 1.1rem; cursor: pointer; z-index: 999;
+      opacity: 0; transform: translateY(20px); pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s; box-shadow: 0 4px 15px rgba(233,69,96,0.25);
+    }
+    #backToTop.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #backToTop:hover { background: #d63850; }
+
+    .reveal-delay-1 { transition-delay: 0.05s; }
+    .reveal-delay-2 { transition-delay: 0.1s; }
+    .reveal-delay-3 { transition-delay: 0.15s; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 220px; }
+      .sidebar.closed { transform: translateX(-220px); }
+      .toggle-btn.shifted { left: 230px; }
+      .main-content.shifted { margin-left: 220px; }
+      .hero-banner { height: 65vh; min-height: 400px; }
+      .hero-title { font-size: 2.2rem; }
+      .hero-desc { font-size: 0.85rem; }
+      .hero-btn { padding: 0.55rem 1.2rem; font-size: 0.85rem; }
+      .hero-nav { display: none; }
+      .content-card { flex: 0 0 140px; }
+      .section-header h2 { font-size: 1.1rem; }
+      .newsletter-form { flex-direction: column; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-banner { height: 55vh; min-height: 350px; padding: 0 3%; }
+      .hero-title { font-size: 1.7rem; }
+      .hero-content { max-width: 100%; }
+      .hero-btns { gap: 0.5rem; }
+      .hero-btn { padding: 0.5rem 1rem; font-size: 0.8rem; }
+      .content-card { flex: 0 0 120px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="scrollProgress"></div>
+
+
+
+  <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="position:fixed;bottom:2rem;left:2rem;z-index:9999;width:44px;height:44px;border-radius:50%;background:#e94560;color:white;border:none;font-size:1.2rem;cursor:pointer;box-shadow:0 4px 16px rgba(233,69,96,0.3);display:none;transition:all 0.3s;opacity:0.9;">&#8593;</button>
+
+  <!-- COOKIE CONSENT -->
+  <div id="cookieConsent" style="position:fixed;bottom:0;left:0;right:0;z-index:99998;background:rgba(10,10,26,0.98);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.04);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;display:none;">
+    <p style="color:rgba(255,255,255,0.6);font-size:0.82rem;margin:0;flex:1;min-width:200px;">Folosim cookie-uri pentru a-ti oferi cea mai buna experienta. Continutand sa navighezi, accepti politica noastra de cookie-uri.</p>
+    <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+      <button onclick="acceptCookies()" style="background:#e94560;color:white;border:none;padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;cursor:pointer;">Accepta</button>
+      <button onclick="acceptCookies()" style="background:transparent;color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.06);padding:0.5rem 1.2rem;border-radius:8px;font-size:0.82rem;cursor:pointer;">Refuza</button>
+    </div>
+  </div>
+
+
+
+  <!-- SHARE MODAL -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="auth-modal" style="width:350px;max-width:90vw;">
+      <div class="am-header"><h2>Distribuie</h2><button class="am-close" onclick="document.getElementById('shareModal').classList.remove('open')">&times;</button></div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;padding:1rem 0;">
+        <div style="text-align:center;cursor:pointer;" onclick="shareTo('facebook')"><div style="width:56px;height:56px;border-radius:50%;background:#1877f2;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.3rem;">f</div><span style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Facebook</span></div>
+        <div style="text-align:center;cursor:pointer;" onclick="shareTo('twitter')"><div style="width:56px;height:56px;border-radius:50%;background:#1da1f2;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.3rem;">X</div><span style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Twitter</span></div>
+        <div style="text-align:center;cursor:pointer;" onclick="shareTo('whatsapp')"><div style="width:56px;height:56px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.3rem;">W</div><span style="font-size:0.7rem;color:rgba(255,255,255,0.4);">WhatsApp</span></div>
+        <div style="text-align:center;cursor:pointer;" onclick="shareTo('telegram')"><div style="width:56px;height:56px;border-radius:50%;background:#0088cc;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.3rem;">T</div><span style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Telegram</span></div>
+        <div style="text-align:center;cursor:pointer;" onclick="shareTo('copy')"><div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.3rem;">&#128203;</div><span style="font-size:0.7rem;color:rgba(255,255,255,0.4);">Copiaza</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTEXT MENU -->
+  <div id="contextMenu" style="position:fixed;z-index:99997;background:#1a1a2e;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:0.3rem;min-width:160px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;">
+    <div onclick="contextAction('play')" style="padding:0.5rem 0.8rem;border-radius:6px;color:white;font-size:0.82rem;cursor:pointer;display:flex;gap:0.5rem;align-items:center;"><span>&#9654;</span> Reda</div>
+    <div onclick="contextAction('list')" style="padding:0.5rem 0.8rem;border-radius:6px;color:white;font-size:0.82rem;cursor:pointer;display:flex;gap:0.5rem;align-items:center;"><span>+</span> Salveaza</div>
+    <div onclick="contextAction('later')" style="padding:0.5rem 0.8rem;border-radius:6px;color:white;font-size:0.82rem;cursor:pointer;display:flex;gap:0.5rem;align-items:center;"><span>&#9201;</span> Vizioneaza mai tarziu</div>
+    <div onclick="contextAction('share')" style="padding:0.5rem 0.8rem;border-radius:6px;color:white;font-size:0.82rem;cursor:pointer;display:flex;gap:0.5rem;align-items:center;"><span>&#128228;</span> Distribuie</div>
+  </div>
+
+
+  <!-- TOOLTIP -->
+  <div id="tooltip" style="position:fixed;z-index:99995;background:#0f3460;color:white;padding:0.4rem 0.8rem;border-radius:6px;font-size:0.75rem;pointer-events:none;opacity:0;transition:opacity 0.2s;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:200px;"></div>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" style="position:fixed;bottom:2rem;right:2rem;z-index:99999;display:flex;flex-direction:column;gap:0.5rem;"></div>
+
+  <!-- PWA INSTALL BANNER -->
+  <div id="pwaInstall" style="position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:99996;background:#1a1a2e;border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:1rem 1.5rem;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none;align-items:center;gap:1.5rem;flex-wrap:wrap;max-width:500px;width:90%;">
+    <div style="display:flex;align-items:center;gap:0.8rem;">
+      <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#e94560,#0f3460);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:white;font-weight:700;">A</div>
+      <div><h4 style="color:white;margin:0;font-size:0.9rem;">Instaleaza Aninaxia</h4><p style="color:rgba(255,255,255,0.3);font-size:0.75rem;margin:0;">Acces rapid de pe ecranul principal</p></div>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+      <button onclick="installApp()" style="background:#e94560;color:white;border:none;padding:0.4rem 1rem;border-radius:8px;font-size:0.82rem;cursor:pointer;">Instaleaza</button>
+      <button onclick="document.getElementById('pwaInstall').style.display='none'" style="background:transparent;color:rgba(255,255,255,0.4);border:none;padding:0.4rem 1rem;font-size:0.82rem;cursor:pointer;">Acum nu</button>
+    </div>
+  </div>
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Se incarca Aninaxia...</p>
+  </div>
+
+  <button class="toggle-btn" id="toggleBtn">&#9776;</button>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span>Meniu</span>
+      <button class="close-btn" id="closeBtn">&times;</button>
+    </div>
+    <div class="sidebar-menu">
+      <a data-page="page-home">Home</a>
+      <a data-page="page-settings">Settings</a>
+      <a data-page="page-upload">Upload</a>
+      <a data-page="page-content">Content</a>
+      <a data-page="page-addon">Addon</a>
+      <a data-page="page-addon-marketplace">Addon Marketplace</a>
+      <a data-page="page-addon-manager">Addon Manager</a>
+      <a data-page="page-live-tv">Live Tv</a>
+      <a data-page="page-channel">Channel</a>
+      <a data-page="page-world">World</a>
+      <a data-page="page-blockbustere">Blockbustere</a>
+      <a data-page="page-all-collection">All Collection</a>
+      <a data-page="page-francise">Francise</a>
+      <a data-page="page-trilogy">Trilogy</a>
+      <a data-page="page-cautare">Cautare</a>
+      <a data-page="page-cloud">Cloud</a>
+      <a data-page="page-subscriptions">Abonamente</a>
+      <a data-page="page-calendar">Calendar</a>
+      <a data-page="page-history">Istoric</a>
+      <a data-page="page-accessibility">Accesibilitate</a>
+    </div>
+  </nav>
+
+  <div class="main-content" id="mainContent">
+
+    <!-- FAZA 5: STICKY HEADER -->
+    <header class="sticky-header" id="stickyHeader">
+      <div class="logo">Anin<span>axia</span></div>
+      <div class="search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" id="searchInput" placeholder="Cauta titluri, persoane, genuri..." autocomplete="off">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+      <div class="header-actions">
+        <button class="watchlist-btn" id="watchlistBtn" title="Lista mea">&#128151; <span class="badge" id="wlBadge">0</span></button>
+        <button title="Notificari" id="notifBtn">&#128276;</button>
+        <div class="profile-wrap">
+          <div class="profile" id="profileBtn">A</div>
+          <div class="profile-dropdown" id="profileDropdown">
+            <div class="pd-user"><strong>Utilizator</strong><span>plan Premium</span></div>
+            <div class="pd-item" onclick="navigateTo('page-settings');closeDropdowns();">&#9881; Setari</div>
+            <div class="pd-item" onclick="navigateTo('page-cloud');closeDropdowns();">&#9729; Cloud</div>
+            <div class="pd-divider"></div>
+            <div class="pd-item" onclick="alert('Delogat!');closeDropdowns();">&#128682; Delogare</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- FAZA 5: MY LIST SECTION -->
+    <section class="content-section reveal" id="myListSection" style="display:none;">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128151; Lista mea <span id="wlCount" style="font-size:0.75rem;color:rgba(255,255,255,0.3);font-weight:400;"></span></h2>
+          <span class="see-all" id="clearWlBtn" style="color:#e94560;">Goleste lista</span>
+        </div>
+        <div class="row-scroll" id="myListRow"></div>
+      </div>
+    </section>
+
+    <!-- FAZA 5: WATCHLIST TOAST -->
+    <div class="wl-toast" id="wlToast">Adaugat in <span>Lista mea</span></div>
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+    <div class="hero-banner" id="heroBanner">
+      <div class="hero-slides" id="heroSlides">
+        <div class="hero-slide active" data-index="0">
+          <div class="bg" style="background-image: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);"></div>
+          <div class="bg-inner"></div>
+          <div class="overlay-grad"></div>
+          <div class="hero-content">
+            <div class="hero-badge-row">
+              <span class="hero-badge year">2024</span>
+              <span class="hero-badge fourk">4K</span>
+              <span class="hero-badge maturity">+16</span>
+              <span class="hero-badge top10">Top 10</span>
+            </div>
+            <h1 class="hero-title">Dune: Part Two</h1>
+            <div class="hero-meta">
+              <span class="rating">&#9733; 8.9</span>
+              <span class="dot"></span>
+              <span>2h 46m</span>
+              <span class="dot"></span>
+              <span class="genre-tag">SF</span>
+              <span class="genre-tag">Actiune</span>
+              <span class="genre-tag">Aventura</span>
+            </div>
+            <p class="hero-desc">Paul Atreus continua calatoria pe Arrakis, alaturandu-se poporului Fremen pentru a lupta impotriva Imperiului si a-si implini destinul.</p>
+            <div class="hero-btns">
+              <button class="hero-btn play">&#9654; Reda acum</button>
+              <button class="hero-btn list">+ Lista mea</button>
+              <button class="hero-btn info">&#9432; Detalii</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-slide" data-index="1">
+          <div class="bg" style="background-image: linear-gradient(135deg, #0a1a0e 0%, #1a3a2e 50%, #0d2818 100%);"></div>
+          <div class="bg-inner"></div>
+          <div class="overlay-grad"></div>
+          <div class="hero-content">
+            <div class="hero-badge-row">
+              <span class="hero-badge year">2024</span>
+              <span class="hero-badge hd">HD</span>
+              <span class="hero-badge maturity">+18</span>
+              <span class="hero-badge top10">Top 10</span>
+            </div>
+            <h1 class="hero-title">Shogun</h1>
+            <div class="hero-meta">
+              <span class="rating">&#9733; 9.1</span>
+              <span class="dot"></span>
+              <span>10 episoade</span>
+              <span class="dot"></span>
+              <span class="genre-tag">Drama</span>
+              <span class="genre-tag">Istoric</span>
+            </div>
+            <p class="hero-desc">In Japonia secolului XVII, un marinar englez naufragiat devine piesa de joc intr-un razboi politic intre puternici stapani ai razboiului.</p>
+            <div class="hero-btns">
+              <button class="hero-btn play">&#9654; Reda acum</button>
+              <button class="hero-btn list">+ Lista mea</button>
+              <button class="hero-btn info">&#9432; Detalii</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-slide" data-index="2">
+          <div class="bg" style="background-image: linear-gradient(135deg, #1a1a0e 0%, #3a2e1e 50%, #28180d 100%);"></div>
+          <div class="bg-inner"></div>
+          <div class="overlay-grad"></div>
+          <div class="hero-content">
+            <div class="hero-badge-row">
+              <span class="hero-badge year">2024</span>
+              <span class="hero-badge fourk">4K</span>
+              <span class="hero-badge maturity">+12</span>
+            </div>
+            <h1 class="hero-title">Deadpool 3</h1>
+            <div class="hero-meta">
+              <span class="rating">&#9733; 8.4</span>
+              <span class="dot"></span>
+              <span>2h 8m</span>
+              <span class="dot"></span>
+              <span class="genre-tag">Actiune</span>
+              <span class="genre-tag">Comedie</span>
+            </div>
+            <p class="hero-desc">Deadpool calatoreste prin multivers alaturi de Wolverine intr-o aventura care va schimba pentru totdeauna istoria Marvel.</p>
+            <div class="hero-btns">
+              <button class="hero-btn play">&#9654; Reda acum</button>
+              <button class="hero-btn list">+ Lista mea</button>
+              <button class="hero-btn info">&#9432; Detalii</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-slide" data-index="3">
+          <div class="bg" style="background-image: linear-gradient(135deg, #0e1a2e 0%, #1e2a3e 50%, #0d1828 100%);"></div>
+          <div class="bg-inner"></div>
+          <div class="overlay-grad"></div>
+          <div class="hero-content">
+            <div class="hero-badge-row">
+              <span class="hero-badge year">2024</span>
+              <span class="hero-badge fourk">4K</span>
+              <span class="hero-badge maturity">+16</span>
+              <span class="hero-badge top10">Top 10</span>
+            </div>
+            <h1 class="hero-title">Fallout</h1>
+            <div class="hero-meta">
+              <span class="rating">&#9733; 8.8</span>
+              <span class="dot"></span>
+              <span>8 episoade</span>
+              <span class="dot"></span>
+              <span class="genre-tag">SF</span>
+              <span class="genre-tag">Actiune</span>
+              <span class="genre-tag">Aventura</span>
+            </div>
+            <p class="hero-desc">In urma unui holocaust nuclear, supravietuitorii ies din adaposturi pentru a descoperi o lume devastata, plina de pericole si mistere.</p>
+            <div class="hero-btns">
+              <button class="hero-btn play">&#9654; Reda acum</button>
+              <button class="hero-btn list">+ Lista mea</button>
+              <button class="hero-btn info">&#9432; Detalii</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-slide" data-index="4">
+          <div class="bg" style="background-image: linear-gradient(135deg, #1a0e1e 0%, #2e1e3a 50%, #180d28 100%);"></div>
+          <div class="bg-inner"></div>
+          <div class="overlay-grad"></div>
+          <div class="hero-content">
+            <div class="hero-badge-row">
+              <span class="hero-badge year">2024</span>
+              <span class="hero-badge hd">HD</span>
+              <span class="hero-badge maturity">+16</span>
+            </div>
+            <h1 class="hero-title">House of the Dragon</h1>
+            <div class="hero-meta">
+              <span class="rating">&#9733; 8.6</span>
+              <span class="dot"></span>
+              <span>8 episoade</span>
+              <span class="dot"></span>
+              <span class="genre-tag">Fantasy</span>
+              <span class="genre-tag">Drama</span>
+            </div>
+            <p class="hero-desc">Casa Targaryen se rupe in doua tabere in timpul unui razboi civil sangeros pentru Tronul de Fier, unde dragoni si tradari decid soarta regatului.</p>
+            <div class="hero-btns">
+              <button class="hero-btn play">&#9654; Reda acum</button>
+              <button class="hero-btn list">+ Lista mea</button>
+              <button class="hero-btn info">&#9432; Detalii</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="hero-nav prev" id="heroPrev">&#9664;</button>
+      <button class="hero-nav next" id="heroNext">&#9654;</button>
+
+      <div class="hero-dots" id="heroDots">
+        <span class="hero-dot active" data-index="0"></span>
+        <span class="hero-dot" data-index="1"></span>
+        <span class="hero-dot" data-index="2"></span>
+        <span class="hero-dot" data-index="3"></span>
+        <span class="hero-dot" data-index="4"></span>
+      </div>
+    </div>
+
+    <div class="hover-modal" id="hoverModal">
+      <div class="hm-thumb" id="hmThumb">
+        <div class="hm-play"><span>&#9654;</span></div>
+      </div>
+      <div class="hm-body">
+        <div class="hm-btns">
+          <button class="hm-play-btn">&#9654; Reda</button>
+          <button title="Adauga in lista">+</button>
+          <button title="Like">&#128077;</button>
+          <button title="Detalii">&#9432;</button>
+        </div>
+        <div class="hm-title" id="hmTitle"></div>
+        <div class="hm-meta" id="hmMeta"></div>
+        <div class="hm-desc" id="hmDesc"></div>
+      </div>
+    </div>
+
+    <!-- ===== FAZA 2: CONTENT ROWS ===== -->
+
+    <!-- Continue Watching -->
+    <section class="content-section reveal">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#9654; Continua vizionarea</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;">&#127910;
+              <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+              <div class="progress-bar"><div class="fill" style="width:65%"></div></div>
+            </div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>S1 E4</span><span>&#183;</span><span>55%</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e2a;">&#128302;
+              <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+              <div class="progress-bar"><div class="fill" style="width:30%"></div></div>
+            </div>
+            <div class="info"><h4>Beetlejuice 2</h4><div class="meta-row"><span>30%</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a1e;">&#128063;
+              <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+              <div class="progress-bar"><div class="fill" style="width:88%"></div></div>
+            </div>
+            <div class="info"><h4>Kingdom 4</h4><div class="meta-row"><span>88%</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e14;">&#127787;
+              <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+              <div class="progress-bar"><div class="fill" style="width:22%"></div></div>
+            </div>
+            <div class="info"><h4>Twisters</h4><div class="meta-row"><span>22%</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#141e2a;">&#128125;
+              <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+              <div class="progress-bar"><div class="fill" style="width:50%"></div></div>
+            </div>
+            <div class="info"><h4>Alien: Romulus</h4><div class="meta-row"><span>50%</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a2a14;">&#128052;
+              <div class="play-overlay"><div class="play-icon">&#9654;</div></div>
+              <div class="progress-bar"><div class="fill" style="width:10%"></div></div>
+            </div>
+            <div class="info"><h4>Kung Fu Panda 4</h4><div class="meta-row"><span>10%</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trending Now -->
+    <section class="content-section reveal reveal-delay-1">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128293; Trending acum</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#2d1b4e;">&#127916;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>SF</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2e;">&#127902;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Shogun</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Drama</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#3a1b1b;">&#128125;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Alien: Romulus</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Horror</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2d3a;">&#128128;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Actiune</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e1b3a;">&#127769;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>House of Dragon</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Fantasy</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2d;">&#128481;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Fallout</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>SF</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#3a2e1b;">&#127937;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Top Boy</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Crima</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2e2e;">&#127758;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Planet Earth III</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Documentar</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- New Releases -->
+    <section class="content-section reveal reveal-delay-2">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#127881; Ultra noi</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;">&#127910;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">NEW</span></div>
+            <div class="info"><h4>Deadpool 3</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Actiune</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e2a;">&#127871;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">NEW</span></div>
+            <div class="info"><h4>Inside Out 2</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Animatie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a1e;">&#128063;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">NEW</span></div>
+            <div class="info"><h4>Kingdom 4</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Actiune</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e14;">&#127787;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">NEW</span></div>
+            <div class="info"><h4>Twisters</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Actiune</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#141e2a;">&#128302;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">NEW</span></div>
+            <div class="info"><h4>Beetlejuice 2</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Comedie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a2a14;">&#128052;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">NEW</span></div>
+            <div class="info"><h4>Kung Fu Panda 4</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Animatie</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Rated -->
+    <section class="content-section reveal reveal-delay-3">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#11088; Cele mai bine cotate</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2e;">&#127902;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Shogun</h4><div class="meta-row"><span>&#9733; 9.1</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2d1b4e;">&#127916;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>&#9733; 8.9</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;">&#128481;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Fallout</h4><div class="meta-row"><span>&#9733; 8.8</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2d3a;">&#128128;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>&#9733; 8.7</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e1b3a;">&#127769;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>House of Dragon</h4><div class="meta-row"><span>&#9733; 8.6</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2e2e;">&#127758;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Planet Earth III</h4><div class="meta-row"><span>&#9733; 9.3</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommend For You -->
+    <section class="content-section reveal">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128161; Recomandate pentru tine</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1a2a3a;">&#127769;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>The Witcher</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Fantasy</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1a3a;">&#128081;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Rings of Power</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Fantasy</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1a2a1a;">&#127794;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Foundation</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>SF</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a2a1a;">&#128170;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Blue Eye Samurai</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Animatie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1a1a2a;">&#128420;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>One Piece</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Aventura</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1a1a;">&#127910;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Ahsoka</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>SF</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comedia -->
+    <section class="content-section reveal reveal-delay-1">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128514; Comedie</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#2a2a14;">&#128052;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Kung Fu Panda 4</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Animatie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e2a;">&#128302;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Beetlejuice 2</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Comedie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1a2e2e;">&#127871;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Inside Out 2</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Animatie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e2e1a;">&#128513;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Ted Lasso</h4><div class="meta-row"><span>2023</span><span>&#183;</span><span>Comedie</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1a2e1a;">&#127917;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Palm Royale</h4><div class="meta-row"><span>2024</span><span>&#183;</span><span>Comedie</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top 10 -->
+    <section class="content-section reveal reveal-delay-2">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#127942; Top 10 azi in Romania</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#2d1b4e;">&#127916;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#1</span></div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2e;">&#127902;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#2</span></div>
+            <div class="info"><h4>Shogun</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#3a1b1b;">&#128125;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#3</span></div>
+            <div class="info"><h4>Alien: Romulus</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2d3a;">&#128128;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#4</span></div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>2023</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e1b3a;">&#127769;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#5</span></div>
+            <div class="info"><h4>House of Dragon</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2d;">&#128481;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#6</span></div>
+            <div class="info"><h4>Fallout</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;">&#127910;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#7</span></div>
+            <div class="info"><h4>Deadpool 3</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a1e;">&#128063;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#8</span></div>
+            <div class="info"><h4>Kingdom 4</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e14;">&#127787;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#9</span></div>
+            <div class="info"><h4>Twisters</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2e2e;">&#127758;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">#10</span></div>
+            <div class="info"><h4>Planet Earth III</h4><div class="meta-row"><span>2023</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aparitii 4K -->
+    <section class="content-section reveal reveal-delay-3">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#127910; Disponibil in 4K</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#2d1b4e;">&#127916;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">4K</span></div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;">&#127910;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">4K</span></div>
+            <div class="info"><h4>Deadpool 3</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e1b3a;">&#127769;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">4K</span></div>
+            <div class="info"><h4>House of Dragon</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2d;">&#128481;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">4K</span></div>
+            <div class="info"><h4>Fallout</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2d3a;">&#128128;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">4K</span></div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>2023</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2e2e;">&#127758;<div class="play-overlay"><div class="play-icon">&#9654;</div></div><span class="badge-corner">4K</span></div>
+            <div class="info"><h4>Planet Earth III</h4><div class="meta-row"><span>2023</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Coming Soon -->
+    <section class="content-section reveal">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128198; In curand</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1a1a2e;">&#128196;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Gladiator 2</h4><div class="meta-row"><span>Noiembrie 2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e1a1a;">&#127877;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Squid Game S2</h4><div class="meta-row"><span>Decembrie 2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1a2e1a;">&#128051;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Moana 2</h4><div class="meta-row"><span>Noiembrie 2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e2e1a;">&#129313;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Venom 3</h4><div class="meta-row"><span>Octombrie 2024</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1a1a2e;">&#127769;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>The Boy and the Heron</h4><div class="meta-row"><span>2024</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FAZA 4: COLECTII, TOP LISTE, BRAND SECTIONS ===== -->
+
+    <!-- Premium Collections -->
+    <section class="content-section reveal">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128142; Colectii Premium</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#e50914,#b20710);display:flex;flex-direction:column;gap:0.3rem;font-size:0;">&#127916;
+              <span style="font-size:1.5rem;font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.3);">MARVEL</span>
+              <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">28 de titluri</span>
+            </div>
+            <div class="info"><h4>Universul Marvel</h4><div class="meta-row"><span>28 de filme si seriale</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);display:flex;flex-direction:column;gap:0.3rem;font-size:0;">
+              <span style="font-size:1.5rem;font-weight:800;color:#ffe81f;text-shadow:0 2px 10px rgba(0,0,0,0.3);">STAR WARS</span>
+              <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">12 titluri</span>
+            </div>
+            <div class="info"><h4>Star Wars Saga</h4><div class="meta-row"><span>12 filme si seriale</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#003366,#001a33);display:flex;flex-direction:column;gap:0.3rem;font-size:0;">
+              <span style="font-size:1.4rem;font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.3);">DC</span>
+              <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">18 titluri</span>
+            </div>
+            <div class="info"><h4>Universul DC</h4><div class="meta-row"><span>18 filme si seriale</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#2d1b4e,#1a0a2e);display:flex;flex-direction:column;gap:0.3rem;font-size:0;">
+              <span style="font-size:1.4rem;font-weight:800;color:#gold;text-shadow:0 2px 10px rgba(0,0,0,0.3);">&#127769; HARRY POTTER</span>
+              <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">8 filme</span>
+            </div>
+            <div class="info"><h4>Harry Potter</h4><div class="meta-row"><span>8 filme</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#1a3a2e,#0d2818);display:flex;flex-direction:column;gap:0.3rem;font-size:0;">
+              <span style="font-size:1.3rem;font-weight:800;color:#8b4513;text-shadow:0 2px 10px rgba(0,0,0,0.3);">LORD OF THE RINGS</span>
+              <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">6 filme</span>
+            </div>
+            <div class="info"><h4>Stapanul Inelelor</h4><div class="meta-row"><span>6 filme</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#2a1a3a,#1a0a2e);display:flex;flex-direction:column;gap:0.3rem;font-size:0;">
+              <span style="font-size:1.3rem;font-weight:800;color:#ffd700;text-shadow:0 2px 10px rgba(0,0,0,0.3);">JAMES BOND</span>
+              <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">25 titluri</span>
+            </div>
+            <div class="info"><h4>James Bond</h4><div class="meta-row"><span>25 de filme</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mood Collections -->
+    <section class="content-section reveal reveal-delay-1">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#127752; Dupa stare de spirit</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#f5af19,#f12711);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#128170;</div>
+            <div class="info"><h4>Plin de actiune</h4><div class="meta-row"><span>42 de titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#11998e,#38ef7d);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#129303;</div>
+            <div class="info"><h4>Ma simt bine</h4><div class="meta-row"><span>35 de titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#2c3e50,#3498db);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#128064;</div>
+            <div class="info"><h4>Mister si suspans</h4><div class="meta-row"><span>28 de titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#8e2de2,#4a00e0);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#127769;</div>
+            <div class="info"><h4>Lumi magice</h4><div class="meta-row"><span>22 de titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#129296;</div>
+            <div class="info"><h4>Mind-bending</h4><div class="meta-row"><span>18 titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#fc5c7d,#6a82fb);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#128151;</div>
+            <div class="info"><h4>Romance</h4><div class="meta-row"><span>30 de titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#0f0c29,#302b63);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#128299;</div>
+            <div class="info"><h4>Fiori reci</h4><div class="meta-row"><span>25 de titluri</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#232526,#414345);display:flex;align-items:center;justify-content:center;font-size:2.5rem;">&#127788;</div>
+            <div class="info"><h4>Documentare socante</h4><div class="meta-row"><span>15 titluri</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Platform Exclusives -->
+    <section class="content-section reveal reveal-delay-2">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#11088; Exclusive platforma</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#1a0a2e,#e94560);display:flex;align-items:center;justify-content:center;font-size:2rem;"><span style="font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:1.2rem;">EXCLUSIV</span></div>
+            <div class="info"><h4>Project: Nebula</h4><div class="meta-row"><span>2024 &middot; SF</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#2e1a0a,#e94560);display:flex;align-items:center;justify-content:center;font-size:2rem;"><span style="font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:1.2rem;">EXCLUSIV</span></div>
+            <div class="info"><h4>Legendele Daciei</h4><div class="meta-row"><span>2024 &middot; Istoric</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#0a1a2e,#e94560);display:flex;align-items:center;justify-content:center;font-size:2rem;"><span style="font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:1.2rem;">EXCLUSIV</span></div>
+            <div class="info"><h4>Codul Lui</h4><div class="meta-row"><span>2024 &middot; Thriller</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#1a2e0a,#e94560);display:flex;align-items:center;justify-content:center;font-size:2rem;"><span style="font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:1.2rem;">EXCLUSIV</span></div>
+            <div class="info"><h4>Delta Force</h4><div class="meta-row"><span>2024 &middot; Actiune</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#2e1a2e,#e94560);display:flex;align-items:center;justify-content:center;font-size:2rem;"><span style="font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:1.2rem;">EXCLUSIV</span></div>
+            <div class="info"><h4>Speranta</h4><div class="meta-row"><span>2024 &middot; Drama</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#0a2e1a,#e94560);display:flex;align-items:center;justify-content:center;font-size:2rem;"><span style="font-weight:800;color:white;text-shadow:0 2px 10px rgba(0,0,0,0.5);font-size:1.2rem;">EXCLUSIV</span></div>
+            <div class="info"><h4>Arctica</h4><div class="meta-row"><span>2024 &middot; Documentar</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Staff Picks -->
+    <section class="content-section reveal reveal-delay-3">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128100; Alegerile echipei</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2e;">&#127902;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Shogun</h4><div class="meta-row"><span>&#128100; Andrei</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2d1b4e;">&#127916;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>&#128100; Elena</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;">&#128481;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Fallout</h4><div class="meta-row"><span>&#128100; Mihai</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a1e2a;">&#127871;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Inside Out 2</h4><div class="meta-row"><span>&#128100; Maria</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2e2e;">&#127758;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Planet Earth III</h4><div class="meta-row"><span>&#128100; Alex</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e2a1a;">&#128170;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Blue Eye Samurai</h4><div class="meta-row"><span>&#128100; Ioana</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Award Winners -->
+    <section class="content-section reveal">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#127942; Castigatori premii</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#d4af37,#1a1a2e);display:flex;align-items:center;justify-content:center;">&#127942;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Oppenheimer</h4><div class="meta-row"><span>7 premii Oscar</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#d4af37,#1b3a2e);display:flex;align-items:center;justify-content:center;">&#127942;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Shogun</h4><div class="meta-row"><span>4 premii Emmy</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#d4af37,#2d1b4e);display:flex;align-items:center;justify-content:center;">&#127942;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>2 premii Oscar</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#d4af37,#1b2d3a);display:flex;align-items:center;justify-content:center;">&#127942;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>8 premii Emmy</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#d4af37,#1b2e2e);display:flex;align-items:center;justify-content:center;">&#127942;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Planet Earth III</h4><div class="meta-row"><span>3 premii BAFTA</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:linear-gradient(135deg,#d4af37,#2a1e2a);display:flex;align-items:center;justify-content:center;">&#127942;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div>
+            <div class="info"><h4>Poor Things</h4><div class="meta-row"><span>4 premii Oscar</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trending Francise -->
+    <section class="content-section reveal reveal-delay-1">
+      <div class="container">
+        <div class="section-header">
+          <h2>&#128200; Francize populare</h2>
+          <span class="see-all">Vezi tot</span>
+        </div>
+        <div class="row-scroll">
+          <div class="content-card">
+            <div class="poster" style="background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#e94560;">&#127916; DUNE</div>
+            <div class="info"><h4>Dune</h4><div class="meta-row"><span>2 filme</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1e2a3a;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:#ff6b6b;">&#127910; DEADPOOL</div>
+            <div class="info"><h4>Deadpool</h4><div class="meta-row"><span>3 filme</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2e1b3a;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#ffd700;">&#127769; GOT</div>
+            <div class="info"><h4>Game of Thrones</h4><div class="meta-row"><span>2 seriale</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b3a2e;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#7bed9f;">&#128481; FALLOUT</div>
+            <div class="info"><h4>Fallout</h4><div class="meta-row"><span>1 sezon +</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#3a1b1b;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#ff6b6b;">&#128125; ALIEN</div>
+            <div class="info"><h4>Alien</h4><div class="meta-row"><span>7 filme</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#1b2d3a;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#81ecec;">&#128128; TLOU</div>
+            <div class="info"><h4>The Last of Us</h4><div class="meta-row"><span>1 sezon +</span></div></div>
+          </div>
+          <div class="content-card">
+            <div class="poster" style="background:#2a2a14;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#f6e58d;">&#128052; KUNG FU</div>
+            <div class="info"><h4>Kung Fu Panda</h4><div class="meta-row"><span>4 filme</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </div><!-- end page-home -->
+
+    <!-- ===== SETTINGS PAGE ===== -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><h1>Settings</h1><p>Personalizeaza-ti experienta</p></div>
+      <div class="page-body">
+        <div class="settings-grid">
+          <div class="setting-item"><div class="si-left"><h3>Notificari</h3><p>Primeste notificari pentru noutati</p></div><div class="toggle-switch on" data-setting="notif"></div></div>
+          <div class="setting-item"><div class="si-left"><h3>Autoplay</h3><p>Reda automat urmatorul episod</p></div><div class="toggle-switch on" data-setting="autoplay"></div></div>
+          <div class="setting-item"><div class="si-left"><h3>Control parental</h3><p>Restrictionare continut dupa varsta</p></div><div class="toggle-switch" data-setting="parental"></div></div>
+          <div class="setting-item"><div class="si-left"><h3>Economie date</h3><p>Calitate redusa pe date mobile</p></div><div class="toggle-switch" data-setting="dataSaver"></div></div>
+          <div class="setting-item"><div class="si-left"><h3>Subtitrari automate</h3><p>Activeaza subtitrari cand e disponibil</p></div><div class="toggle-switch" data-setting="subtitles"></div></div>
+          <div class="setting-item"><div class="si-left"><h3>Limba</h3><p>Limba interfetei</p></div><select class="select-input"><option>Romana</option><option>English</option><option>Deutsch</option></select></div>
+          <div class="setting-item"><div class="si-left"><h3>Calitate video</h3><p>Streaming implicit</p></div><select class="select-input"><option>Automata</option><option>4K</option><option>HD</option><option>SD</option></select></div>
+          <div class="setting-item"><div class="si-left"><h3>Istoric vizionare</h3><p>128 de titluri vizionate</p></div><button class="upload-btn" style="padding:0.4rem 1rem;width:auto;background:rgba(233,69,150,0.15);color:#e94560;" onclick="if(confirm('Stergi tot istoricul?'))alert('Istoric sters!')">Sterge</button></div><div class="setting-item"><div class="si-left"><h3>Clear cache</h3><p>Elibereaza spatiu (1.2 GB)</p></div><button class="upload-btn" style="padding:0.4rem 1rem;width:auto;" onclick="alert('Cache curatat!')">Sterge</button></div>
+          <div class="setting-item" style="flex-wrap:wrap;"><div class="si-left" style="width:100%;margin-bottom:0.5rem;"><h3>Calitate preferata</h3><p>Alege calitatea implicita pentru streaming</p></div><div class="quality-selector"><span class="qs-opt" onclick="selectQuality(this)">Automata</span><span class="qs-opt active" onclick="selectQuality(this)">4K</span><span class="qs-opt" onclick="selectQuality(this)">1080p</span><span class="qs-opt" onclick="selectQuality(this)">720p</span><span class="qs-opt" onclick="selectQuality(this)">480p</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== UPLOAD PAGE ===== -->
+    <div class="page" id="page-upload">
+      <div class="page-header"><h1>Upload</h1><p>Incarca continut pe platforma</p></div>
+      <div class="page-body">
+        <div class="upload-zone" id="uploadZone">
+          <div class="uz-icon">&#128194;</div>
+          <h3>Incarca fisiere</h3>
+          <p>Trage fisierele aici sau da click pentru a selecta</p>
+        </div>
+        <div class="upload-form">
+          <input type="text" placeholder="Sau lipeste un URL (film, serial, torrent)">
+          <select><option>Film</option><option>Serial</option><option>Live TV</option><option>Documentar</option></select>
+          <input type="text" placeholder="Titlu">
+          <button class="upload-btn">Incarca</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONTENT PAGE ===== -->
+    <div class="page" id="page-content">
+      <div class="page-header"><h1>Content</h1><p>Exploreaza tot continutul disponibil</p></div>
+      <div class="page-body">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <div style="flex:1;min-width:200px;"><input type="text" id="epgSearch" placeholder="Cauta program..." style="width:100%;padding:0.5rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:white;font-size:0.82rem;outline:none;"></div>
+          <div style="display:flex;gap:0.3rem;"><button class="filter-tab active" onclick="loadEPG('now')">Acum</button><button class="filter-tab" onclick="loadEPG('next')">Urmeaza</button><button class="filter-tab" onclick="loadEPG('prime')">Prime Time</button></div>
+        </div>
+        <div class="epg-list" id="epgList">
+          <div class="epg-item"><span class="epg-time epg-now">20:00</span><span class="epg-name" style="color:#e94560;font-weight:600;">Telejurnal</span><span class="epg-next">Urmeaza: 21:00 Stiri</span></div>
+          <div class="epg-item"><span class="epg-time">20:00</span><span class="epg-name">Stirile PRO TV</span><span class="epg-next">Urmeaza: 21:00 Chefi la cutite</span></div>
+          <div class="epg-item"><span class="epg-time">20:00</span><span class="epg-name">Fotbal: Steaua - Dinamo</span><span class="epg-next">Urmeaza: 22:00 Analiza</span></div>
+          <div class="epg-item"><span class="epg-time">19:30</span><span class="epg-name">Exatlon</span><span class="epg-next">Urmeaza: 21:00 Jocul</span></div>
+          <div class="epg-item"><span class="epg-time">21:00</span><span class="epg-name">House of Dragon S2E5</span><span class="epg-next">Urmeaza: 22:00 Talk show</span></div>
+        </div>
+        <div class="filter-tabs">
+          <span class="filter-tab">Filme</span>
+          <span class="filter-tab">Seriale</span>
+          <span class="filter-tab">Documentare</span>
+          <span class="filter-tab">Live TV</span>
+          <span class="filter-tab">Animatie</span>
+        </div>
+        <div class="content-grid-view" id="contentGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== ADDON PAGE ===== -->
+    <div class="page" id="page-addon">
+      <div class="page-header"><h1>Addon</h1><p>Gestioneaza addon-urile platformei</p></div>
+      <div class="page-body"><p style="color:rgba(255,255,255,0.4);margin-bottom:1rem;">Addon-urile extind functionalitatile platformei. Alege dintre sute de addon-uri disponibile.</p></div>
+    </div>
+
+    <!-- ===== ADDON MARKETPLACE ===== -->
+    <div class="page" id="page-addon-marketplace">
+      <div class="page-header"><h1>Addon Marketplace</h1><p>Descopera si instaleaza addon-uri noi</p></div>
+      <div class="page-body">
+        <div class="addon-grid">
+          <div class="addon-card"><div class="ac-icon">&#127916;</div><h4>Cinemeta</h4><p>Catalog filme si seriale</p><span class="ac-status installed">Instalat</span></div>
+          <div class="addon-card"><div class="ac-icon">&#127910;</div><h4>Torrentio</h4><p>Streaming din torrente</p><span class="ac-status installed">Instalat</span></div>
+          <div class="addon-card"><div class="ac-icon">&#128250;</div><h4>WatchHub</h4><p>Link-uri multiple surse</p><span class="ac-status available">Instaleaza</span></div>
+          <div class="addon-card"><div class="ac-icon">&#127758;</div><h4>WorldTV</h4><p>Canale TV internationale</p><span class="ac-status available">Instaleaza</span></div>
+          <div class="addon-card"><div class="ac-icon">&#128196;</div><h4>Subtitles</h4><p>Subtitrari automate</p><span class="ac-status available">Instaleaza</span></div>
+          <div class="addon-card"><div class="ac-icon">&#127942;</div><h4>Trakt</h4><p>Urmareste ce vezi</p><span class="ac-status available">Instaleaza</span></div>
+          <div class="addon-card"><div class="ac-icon">&#127775;</div><h4>IMDB</h4><p>Rating si review-uri</p><span class="ac-status available">Instaleaza</span></div>
+          <div class="addon-card"><div class="ac-icon">&#127873;</div><h4>Real Debrid</h4><p>Streaming de pe host-uri</p><span class="ac-status available">Instaleaza</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ADDON MANAGER ===== -->
+    <div class="page" id="page-addon-manager">
+      <div class="page-header"><h1>Addon Manager</h1><p>Gestioneaza addon-urile instalate</p></div>
+      <div class="page-body">
+        <div class="addon-grid">
+          <div class="addon-card" style="border-color:rgba(78,205,196,0.2);"><div class="ac-icon">&#127916;</div><h4>Cinemeta</h4><p>v2.1.4</p><span class="ac-status installed" style="background:rgba(233,69,150,0.15);color:#e94560;">Dezactiveaza</span></div>
+          <div class="addon-card" style="border-color:rgba(78,205,196,0.2);"><div class="ac-icon">&#127910;</div><h4>Torrentio</h4><p>v1.8.2</p><span class="ac-status installed" style="background:rgba(233,69,150,0.15);color:#e94560;">Dezactiveaza</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LIVE TV PAGE ===== -->
+    <div class="page" id="page-live-tv">
+      <div class="page-header"><h1>Live TV</h1><p>Canale TV in direct</p></div>
+      <div class="page-body">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+          <div style="flex:1;min-width:200px;"><input type="text" id="epgSearch" placeholder="Cauta program..." style="width:100%;padding:0.5rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:white;font-size:0.82rem;outline:none;"></div>
+          <div style="display:flex;gap:0.3rem;"><button class="filter-tab active" onclick="loadEPG('now')">Acum</button><button class="filter-tab" onclick="loadEPG('next')">Urmeaza</button><button class="filter-tab" onclick="loadEPG('prime')">Prime Time</button></div>
+        </div>
+        <div class="epg-list" id="epgList">
+          <div class="epg-item"><span class="epg-time epg-now">20:00</span><span class="epg-name" style="color:#e94560;font-weight:600;">Telejurnal</span><span class="epg-next">Urmeaza: 21:00 Stiri</span></div>
+          <div class="epg-item"><span class="epg-time">20:00</span><span class="epg-name">Stirile PRO TV</span><span class="epg-next">Urmeaza: 21:00 Chefi la cutite</span></div>
+          <div class="epg-item"><span class="epg-time">20:00</span><span class="epg-name">Fotbal: Steaua - Dinamo</span><span class="epg-next">Urmeaza: 22:00 Analiza</span></div>
+          <div class="epg-item"><span class="epg-time">19:30</span><span class="epg-name">Exatlon</span><span class="epg-next">Urmeaza: 21:00 Jocul</span></div>
+          <div class="epg-item"><span class="epg-time">21:00</span><span class="epg-name">House of Dragon S2E5</span><span class="epg-next">Urmeaza: 22:00 Talk show</span></div>
+        </div>
+        <div class="filter-tabs">
+          <span class="filter-tab">Stiri</span>
+          <span class="filter-tab">Sport</span>
+          <span class="filter-tab">Muzica</span>
+          <span class="filter-tab">Filme</span>
+          <span class="filter-tab">Copii</span>
+        </div>
+        <div class="tv-grid">
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">TVR 1</div><div class="tv-now">Acum: Telejurnal</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">Antena 1</div><div class="tv-now">Acum: Stirile Antena 1</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">PRO TV</div><div class="tv-now">Acum: Stirile PRO TV</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#9917;</div><div class="tv-name">Digi Sport 1</div><div class="tv-now">Acum: Fotbal Live</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#9917;</div><div class="tv-name">Digi Sport 2</div><div class="tv-now">Acum: Analiza meci</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127928;</div><div class="tv-name">MTV</div><div class="tv-now">Acum: Top 40</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127928;</div><div class="tv-name">Kiss TV</div><div class="tv-now">Acum: Kiss News</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127916;</div><div class="tv-name">HBO</div><div class="tv-now">Acum: House of Dragon</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127916;</div><div class="tv-name">Cinema</div><div class="tv-now">Acum: Film actiune</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#128250;</div><div class="tv-name">National Geo</div><div class="tv-now">Acum: Documentar</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127757;</div><div class="tv-name">BBC World</div><div class="tv-now">Acum: World News</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127758;</div><div class="tv-name">Discovery</div><div class="tv-now">Acum: Planeta in direct</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CHANNEL PAGE ===== -->
+    <div class="page" id="page-channel">
+      <div class="page-header"><h1>Channel</h1><p>Toate canalele disponibile</p></div>
+      <div class="page-body">
+        <div class="tv-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));">
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">TVR 1</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">TVR 2</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">Antena 1</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">PRO TV</div><div class="tv-now">FHD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127911;</div><div class="tv-name">Kanal D</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#9917;</div><div class="tv-name">Digi Sport 1</div><div class="tv-now">FHD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#9917;</div><div class="tv-name">Digi Sport 2</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#9917;</div><div class="tv-name">Sport.ro</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127928;</div><div class="tv-name">MTV</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127928;</div><div class="tv-name">Kiss TV</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127928;</div><div class="tv-name">Music Channel</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127916;</div><div class="tv-name">HBO 2</div><div class="tv-now">FHD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127916;</div><div class="tv-name">Cinema</div><div class="tv-now">FHD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#128250;</div><div class="tv-name">Discovery</div><div class="tv-now">HD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127758;</div><div class="tv-name">National Geo</div><div class="tv-now">FHD</div></div>
+          <div class="tv-channel"><div class="tv-logo">&#127757;</div><div class="tv-name">BBC World</div><div class="tv-now">HD</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WORLD PAGE ===== -->
+    <div class="page" id="page-world">
+      <div class="page-header"><h1>World</h1><p>Continut international din toata lumea</p></div>
+      <div class="page-body"><p style="color:rgba(255,255,255,0.4);margin-bottom:1rem;">Descopera continut din peste 50 de tari. Filme, seriale si canale TV internationale.</p>
+        <div class="addon-grid">
+          <div class="addon-card"><div class="ac-icon">&#127463;&#127479;</div><h4>Franta</h4><p>Filme si seriale franceze</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127465;&#127466;</div><h4>Germania</h4><p>Continut german</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127470;&#127475;</div><h4>India</h4><p>Bollywood si seriale</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127471;&#127477;</div><h4>Japonia</h4><p>Anime si filme japoneze</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127464;&#127462;</div><h4>UK</h4><p>Seriale BBC si filme</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127482;&#127480;</div><h4>SUA</h4><p>Hollywood si productii</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127466;&#127482;</div><h4>Spania</h4><p>Filme si seriale spaniole</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127480;&#127468;</div><h4>Romania</h4><p>Productii romanesti</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BLOCKBUSTERE PAGE ===== -->
+    <div class="page" id="page-blockbustere">
+      <div class="page-header"><h1>Blockbustere</h1><p>Cele mai mari productii cinematografice</p></div>
+      <div class="page-body">
+        <div class="content-grid-view">
+          <div class="content-card"><div class="poster" style="background:#2d1b4e;">&#127916;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>Dune: Part Two</h4><div class="meta-row"><span>$800M worldwide</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#1e2a3a;">&#127910;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>Deadpool 3</h4><div class="meta-row"><span>$1.2B worldwide</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#3a1b1b;">&#128125;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>Alien: Romulus</h4><div class="meta-row"><span>$350M worldwide</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#2a2a14;">&#128052;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>Kung Fu Panda 4</h4><div class="meta-row"><span>$500M worldwide</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#2a1e2a;">&#128302;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>Beetlejuice 2</h4><div class="meta-row"><span>$450M worldwide</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#2a1e14;">&#127787;<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>Twisters</h4><div class="meta-row"><span>$400M worldwide</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ALL COLLECTION PAGE ===== -->
+    <div class="page" id="page-all-collection">
+      <div class="page-header"><h1>All Collection</h1><p>Toate colectiile disponibile</p></div>
+      <div class="page-body">
+        <div class="addon-grid">
+          <div class="addon-card"><div class="ac-icon">&#127759;</div><h4>Actiune</h4><p>128 de titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#128513;</div><h4>Comedie</h4><p>95 de titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#128128;</div><h4>Drama</h4><p>112 titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#128125;</div><h4>Horror</h4><p>67 de titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127769;</div><h4>Fantasy</h4><p>54 de titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127936;</div><h4>SF</h4><p>73 de titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#128153;</div><h4>Romance</h4><p>48 de titluri</p></div>
+          <div class="addon-card"><div class="ac-icon">&#127758;</div><h4>Documentar</h4><p>36 de titluri</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FRANCISE PAGE ===== -->
+    <div class="page" id="page-francise">
+      <div class="page-header"><h1>Francise</h1><p>Colectii complete ale francizelor populare</p></div>
+      <div class="page-body">
+        <div class="content-grid-view">
+          <div class="content-card"><div class="poster" style="background:linear-gradient(135deg,#e50914,#b20710);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">MARVEL</div><div class="info"><h4>Marvel</h4><div class="meta-row"><span>28 de titluri</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);display:flex;align-items:center;justify-content:center;color:#ffe81f;font-weight:700;font-size:1rem;">STAR WARS</div><div class="info"><h4>Star Wars</h4><div class="meta-row"><span>12 titluri</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:linear-gradient(135deg,#003366,#001a33);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">DC</div><div class="info"><h4>DC</h4><div class="meta-row"><span>18 titluri</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:linear-gradient(135deg,#2d1b4e,#1a0a2e);display:flex;align-items:center;justify-content:center;color:#ffd700;font-weight:700;font-size:1rem;">HARRY POTTER</div><div class="info"><h4>Harry Potter</h4><div class="meta-row"><span>8 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:linear-gradient(135deg,#1a3a2e,#0d2818);display:flex;align-items:center;justify-content:center;color:#8b4513;font-weight:700;font-size:1rem;">LOTR</div><div class="info"><h4>Stapanul Inelelor</h4><div class="meta-row"><span>6 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:linear-gradient(135deg,#2a1a3a,#1a0a2e);display:flex;align-items:center;justify-content:center;color:#ffd700;font-weight:700;font-size:1rem;">JAMES BOND</div><div class="info"><h4>James Bond</h4><div class="meta-row"><span>25 de filme</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TRILOGY PAGE ===== -->
+    <div class="page" id="page-trilogy">
+      <div class="page-header"><h1>Trilogy</h1><p>Cele mai cunoscute trilogii</p></div>
+      <div class="page-body">
+        <div class="content-grid-view">
+          <div class="content-card"><div class="poster" style="background:#1a3a2e;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">LOTR</div><div class="info"><h4>Stapanul Inelelor</h4><div class="meta-row"><span>3 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#1a1a2e;display:flex;align-items:center;justify-content:center;color:#ffe81f;font-weight:700;font-size:1rem;">STAR WARS OG</div><div class="info"><h4>Star Wars Original</h4><div class="meta-row"><span>3 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#2d1b4e;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">&#127769; DARK KNIGHT</div><div class="info"><h4>Dark Knight</h4><div class="meta-row"><span>3 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#1e2a3a;display:flex;align-items:center;justify-content:center;color:#ff6b6b;font-weight:700;font-size:1rem;">&#127910; DEADPOOL</div><div class="info"><h4>Deadpool</h4><div class="meta-row"><span>3 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#3a1b1b;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">&#128125; ALIEN</div><div class="info"><h4>Alien (original)</h4><div class="meta-row"><span>3 filme</span></div></div></div>
+          <div class="content-card"><div class="poster" style="background:#2a2a14;display:flex;align-items:center;justify-content:center;color:#f6e58d;font-weight:700;font-size:1rem;">&#128052; KUNG FU</div><div class="info"><h4>Kung Fu Panda</h4><div class="meta-row"><span>4 filme</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CAUTARE PAGE ===== -->
+    <div class="page" id="page-cautare">
+      <div class="page-header"><h1>Cautare</h1><p>Cauta orice titlu, persoana sau gen</p></div>
+      <div class="page-body">
+        <div style="position:relative;max-width:600px;">
+          <div class="adv-search-filters">
+          <select id="asType"><option value="">Toate tipurile</option><option>Filme</option><option>Seriale</option><option>Documentare</option></select>
+          <select id="asGenre"><option value="">Toate genurile</option><option>Actiune</option><option>Comedie</option><option>Drama</option><option>SF</option><option>Horror</option><option>Fantasy</option><option>Animatie</option></select>
+          <select id="asYear"><option value="">Orice an</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option></select>
+          <select id="asRating"><option value="">Orice rating</option><option>9+</option><option>8+</option><option>7+</option><option>6+</option></select>
+          <button class="adv-search-btn" onclick="advancedSearch()">Cauta</button>
+        </div>
+        <input type="text" id="cautareInput" placeholder="Cauta filme, seriale, persoane..." style="width:100%;padding:0.8rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.06);color:white;font-size:1rem;outline:none;">
+        </div>
+        <div id="cautareResults" style="margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.8rem;"></div>
+      </div>
+    </div>
+
+    <!-- ===== CLOUD PAGE ===== -->
+    
+    <!-- SUBSCRIPTIONS PAGE -->
+    <div class="page" id="page-subscriptions">
+      <div class="page-header">
+        <h1>Planuri de abonament</h1>
+        <p>Alege planul potrivit pentru tine</p>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin:2rem 0;">
+        <div style="flex:1;min-width:240px;max-width:300px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:1.5rem;text-align:center;">
+          <h3 style="color:white;font-size:1.1rem;">Gratuit</h3>
+          <div style="font-size:2rem;color:white;font-weight:700;margin:0.8rem 0;">0 LEI</div>
+          <ul style="list-style:none;padding:0;margin:1.5rem 0;text-align:left;font-size:0.82rem;">
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Continut limitat</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Reclame</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; 1 dispozitiv</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.3);">&#10007; 4K UHD</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.3);">&#10007; Descarcari</li>
+          </ul>
+          <button class="upload-btn" style="width:100%;background:rgba(255,255,255,0.06);border:none;" onclick="showToast('Plan gratuit activat!','success')">Actualul plan</button>
+        </div>
+        <div style="flex:1;min-width:240px;max-width:300px;background:linear-gradient(135deg,rgba(233,69,96,0.08),rgba(15,52,96,0.08));border:2px solid #e94560;border-radius:16px;padding:1.5rem;text-align:center;position:relative;">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#e94560;color:white;padding:0.2rem 1rem;border-radius:20px;font-size:0.7rem;font-weight:600;">POPULAR</div>
+          <h3 style="color:white;font-size:1.1rem;">Premium</h3>
+          <div style="font-size:2rem;color:white;font-weight:700;margin:0.8rem 0;">29 LEI</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:0.8rem;">Pe luna</div>
+          <ul style="list-style:none;padding:0;margin:1.5rem 0;text-align:left;font-size:0.82rem;">
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Tot continutul</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Fara reclame</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; 4 dispozitive</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; 4K UHD + HDR</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Descarcari nelimitate</li>
+          </ul>
+          <button class="upload-btn" style="width:100%;" onclick="showToast('Abonament Premium activat! 30 zile gratuite.','success')">Incearca gratuit</button>
+        </div>
+        <div style="flex:1;min-width:240px;max-width:300px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:1.5rem;text-align:center;">
+          <h3 style="color:white;font-size:1.1rem;">Familie</h3>
+          <div style="font-size:2rem;color:white;font-weight:700;margin:0.8rem 0;">39 LEI</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:0.8rem;">Pe luna</div>
+          <ul style="list-style:none;padding:0;margin:1.5rem 0;text-align:left;font-size:0.82rem;">
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Tot din Premium</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; 6 dispozitive</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Profil copii</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Control parental</li>
+            <li style="padding:0.4rem 0;color:rgba(255,255,255,0.6);">&#10003; Dolby Atmos</li>
+          </ul>
+          <button class="upload-btn" style="width:100%;" onclick="showToast('Abonament Familie activat!','success')">Alege familia</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR PAGE -->
+    <div class="page" id="page-calendar">
+      <div class="page-header"><h1>Calendar lansari</h1><p>Urmatoarele lansari pe platforma</p></div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <button class="hero-btn list active" style="padding:0.3rem 0.7rem;font-size:0.75rem;" onclick="filterCalendar('all',this)">Toate</button>
+        <button class="hero-btn list" style="padding:0.3rem 0.7rem;font-size:0.75rem;" onclick="filterCalendar('week',this)">Asta saptamana</button>
+        <button class="hero-btn list" style="padding:0.3rem 0.7rem;font-size:0.75rem;" onclick="filterCalendar('month',this)">Asta luna</button>
+      </div>
+      <div class="epg-list" id="calendarList">
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">Dune: Part Three</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">15 Aug 2025</span><span style="font-size:0.7rem;color:#e94560;">In curand</span></div>
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">LOTR: War of the Rohirrim</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">22 Aug 2025</span><span style="font-size:0.7rem;color:#4ecdc4;">Curand</span></div>
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">Stranger Things S5</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">01 Sep 2025</span><span style="font-size:0.7rem;color:#ff6b6b;">Anticipat</span></div>
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">The Last of Us S2</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">10 Sep 2025</span><span style="font-size:0.7rem;color:#ffd93d;">Curand</span></div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="page-header"><h1>Istoric vizionare</h1><button class="upload-btn" style="padding:0.4rem 1rem;width:auto;" onclick="clearHistory()">Sterge istoric</button></div>
+      <div id="historyList" class="epg-list">
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">Dune: Part Two</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">Vizionat azi, 20:30</span><span style="font-size:0.7rem;color:#4ecdc4;">65%</span></div>
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">Shogun S1E6</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">Vizionat azi, 18:15</span><span style="font-size:0.7rem;color:#4ecdc4;">100%</span></div>
+        <div class="epg-item"><span style="font-size:0.9rem;color:white;">Fallout S1E3</span><span style="font-size:0.75rem;color:rgba(255,255,255,0.3);">Vizionat ieri, 22:00</span><span style="font-size:0.7rem;color:white;">42%</span></div>
+      </div>
+    </div>
+
+    <!-- ACCESSIBILITY PAGE -->
+    <div class="page" id="page-accessibility">
+      <div class="page-header"><h1>Accesibilitate</h1><p>Personalizeaza experienta vizuala</p></div>
+      <div class="setting-item"><div class="si-left"><h3>Mod contrast ridicat</h3><p>Creste contrastul pentru lizibilitate</p></div><button class="qs-opt active" onclick="toggleHighContrast(this)">Activat</button></div>
+      <div class="setting-item"><div class="si-left"><h3>Marime font</h3><p>Ajusteaza dimensiunea textului</p></div>
+        <div style="display:flex;gap:0.3rem;"><button class="qs-opt" onclick="setFontSize('small',this)">Mic</button><button class="qs-opt active" onclick="setFontSize('medium',this)">Mediu</button><button class="qs-opt" onclick="setFontSize('large',this)">Mare</button></div>
+      </div>
+      <div class="setting-item"><div class="si-left"><h3>Redu animatiile</h3><p>Minimizeaza efectele de miscare</p></div><label class="switch"><input type="checkbox" onchange="document.body.classList.toggle('reduce-motion',this.checked);localStorage.setItem('reducedMotion',this.checked);showToast('Setare salvata','success')"><span class="slider"></span></label></div>
+      <div class="setting-item"><div class="si-left"><h3>Subtitrari mari</h3><p>Marime marita pentru subtitrari</p></div><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+    </div>
+
+    <div class="page" id="page-cloud">
+      <div class="page-header"><h1>Cloud</h1><p>Stocare si sincronizare in cloud</p></div>
+      <div class="page-body">
+        <div class="cloud-stats-bar">
+          <div class="cloud-stat-card"><div class="csc-num">50</div><div class="csc-label">GB utilizati</div></div>
+          <div class="cloud-stat-card"><div class="csc-num">150</div><div class="csc-label">GB liberi</div></div>
+          <div class="cloud-stat-card"><div class="csc-num">1,247</div><div class="csc-label">Fisiere sincronizate</div></div>
+          <div class="cloud-stat-card"><div class="csc-num">12</div><div class="csc-label">Dispozitive conectate</div></div><div class="cloud-stat-card"><div class="csc-num" style="color:#4ecdc4;">1.8K</div><div class="csc-label">Ore vizionate azi</div></div><div class="cloud-stat-card"><div class="csc-num" style="color:#ff6b6b;">342</div><div class="csc-label">Descarcari active</div></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+            <span style="color:white;font-weight:600;">Sincronizare</span>
+            <span style="color:rgba(255,255,255,0.3);font-size:0.8rem;">Ultima data: azi 14:32</span>
+          </div>
+          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-bottom:1.5rem;">
+            <div style="height:100%;width:25%;background:linear-gradient(90deg,#e94560,#ff6b6b);border-radius:3px;"></div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="upload-btn" style="padding:0.5rem 1.2rem;" onclick="alert('Sincronizare pornita!')">Sincronizeaza acum</button>
+            <button style="padding:0.5rem 1.2rem;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:white;cursor:pointer;" onclick="alert('Manager fisiere deschis')">Gestioneaza fisiere</button>
+        </div>
+        <div style="margin-top:1.5rem;">
+          <h4 style="color:white;font-size:0.9rem;margin-bottom:0.8rem;">Manager descarcari</h4>
+          <div class="epg-list">
+            <div class="epg-item" style="gap:0.5rem;"><span style="font-size:0.85rem;">Dune: Part Two</span><span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">4K</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="height:100%;width:45%;background:#e94560;border-radius:2px;"></div></div><span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">45%</span><button style="background:rgba(233,69,150,0.1);border:none;color:#e94560;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;cursor:pointer;">Anuleaza</button></div>
+            <div class="epg-item" style="gap:0.5rem;"><span style="font-size:0.85rem;">Shogun S1</span><span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">HD</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="height:100%;width:78%;background:#4ecdc4;border-radius:2px;"></div></div><span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">78%</span><button style="background:rgba(78,205,196,0.1);border:none;color:#4ecdc4;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.7rem;cursor:pointer;">Pauza</button></div>
+            <div class="epg-item" style="gap:0.5rem;"><span style="font-size:0.85rem;">Fallout</span><span style="font-size:0.7rem;color:rgba(255,255,255,0.3);">4K</span><div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="height:100%;width:100%;background:#4ecdc4;border-radius:2px;"></div></div><span style="font-size:0.7rem;color:#4ecdc4;">Finalizat</span></div>
+          </div>
+        </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEWSLETTER -->
+    <section class="newsletter-section reveal">
+      <h2>Ramai la curent</h2>
+      <p>Aboneaza-te si fii primul care afla despre noutati, lansari si oferte.</p>
+      <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Te-ai abonat cu succes!');">
+        <input type="email" placeholder="Adresa ta de email" required>
+        <button type="submit">Aboneaza-te</button>
+      </form>
+    </section>
+
+    <footer>
+      <div class="footer-grid">
+        <div class="footer-col"><h4>Platforma</h4><a data-page="page-home">Home</a><a data-page="page-settings">Settings</a><a data-page="page-upload">Upload</a><a data-page="page-content">Content</a></div>
+        <div class="footer-col"><h4>Addon-uri</h4><a data-page="page-addon-marketplace">Addon Marketplace</a><a data-page="page-addon-manager">Addon Manager</a></div>
+        <div class="footer-col"><h4>Continut</h4><a data-page="page-live-tv">Live TV</a><a data-page="page-channel">Channel</a><a data-page="page-world">World</a><a data-page="page-blockbustere">Blockbustere</a></div>
+        <div class="footer-col"><h4>Colecții</h4><a data-page="page-all-collection">All Collection</a><a data-page="page-francise">Francise</a><a data-page="page-trilogy">Trilogy</a><a data-page="page-cautare">Cautare</a></div>
+        <div class="footer-col"><h4>Cloud</h4><a data-page="page-cloud">Cloud storage</a><a>Sincronizare</a></div>
+        <div class="footer-col"><h4>Suport</h4><a>Centru de ajutor</a><a>Termeni si conditii</a><a>Politica de confidentialitate</a></div>
+      </div>
+      <div class="footer-bottom">&copy; 2026 — Toate drepturile rezervate. Platforma de entertainment.</div>
+    </footer>
+  </div>
+
+  <button id="backToTop">&#9650;</button>
+
+  <!-- PROFILE MANAGER MODAL -->
+  <div class="modal-overlay" id="profileManager">
+    <div class="auth-modal" style="width:400px;max-width:90vw;">
+      <div class="am-header">
+        <h2>Gestioneaza profiluri</h2>
+        <button class="am-close" onclick="document.getElementById('profileManager').classList.remove('open')">&times;</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem;">
+        <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e94560,#0f3460);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">A</div>
+          <span style="flex:1;color:white;font-size:0.9rem;">Admin</span>
+          <span style="font-size:0.7rem;color:#4ecdc4;">Activ</span>
+          <button style="background:rgba(233,69,150,0.1);border:none;color:#e94560;padding:0.2rem 0.6rem;border-radius:4px;font-size:0.7rem;cursor:pointer;">Editeaza</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#4ecdc4,#1a1a2e);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">M</div>
+          <span style="flex:1;color:white;font-size:0.9rem;">Mihai</span>
+          <button style="background:rgba(233,69,150,0.1);border:none;color:#e94560;padding:0.2rem 0.6rem;border-radius:4px;font-size:0.7rem;cursor:pointer;">Editeaza</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.8rem;padding:0.5rem 0;">
+          <div style="width:40px;height:40px;border-radius:50%;border:2px dashed rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1rem;color:rgba(255,255,255,0.3);cursor:pointer;">+</div>
+          <span style="color:rgba(255,255,255,0.4);font-size:0.85rem;">Adauga profil</span>
+        </div>
+      </div>
+      <button class="upload-btn" style="margin-top:1rem;" onclick="alert('Profil adaugat!');document.getElementById('profileManager').classList.remove('open');">Salveaza</button>
+    </div>
+  </div>
+  <!-- CONTENT DETAIL MODAL -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="auth-modal" style="width:500px;max-width:90vw;">
+      <div class="am-header">
+        <h2 id="detailTitle">Titlu</h2>
+        <button class="am-close" onclick="document.getElementById('detailModal').classList.remove('open')">&times;</button>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <div style="width:140px;height:210px;border-radius:8px;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:3rem;flex-shrink:0;" id="detailPoster">&#127916;</div>
+        <div style="flex:1;min-width:200px;">
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;" id="detailMeta"></div>
+          <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:1rem;line-height:1.5;" id="detailDesc"></p>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="hero-btn play" style="padding:0.5rem 1.2rem;font-size:0.85rem;" onclick="document.getElementById('detailModal').classList.remove('open');document.getElementById('playerOverlay').classList.add('open');">&#9654; Reda</button><button class="hero-btn list" style="padding:0.5rem 1.2rem;font-size:0.85rem;" onclick="var t=document.getElementById('detailTitle').textContent;var w=JSON.parse(localStorage.getItem('wl')||'[]');if(!w.includes(t)){w.push(t);localStorage.setItem('wl',JSON.stringify(w));alert(t+' adaugat la lista!');}else{alert('Deja in lista!');}">+ Lista mea</button>
+            <button class="hero-btn list" style="padding:0.5rem 1.2rem;font-size:0.85rem;">+ Lista</button>
+            <button class="hero-btn list" style="padding:0.5rem 1.2rem;font-size:0.85rem;">&#128077;</button><button class="hero-btn list" style="padding:0.5rem 1.2rem;font-size:0.85rem;" onclick="document.getElementById('shareModal').classList.add('open')">&#128228;</button>
+          </div>
+        </div>
+      <div style="margin-top:1rem;border-top:1px solid rgba(255,255,255,0.04);padding-top:1rem;">
+        <h4 style="color:white;font-size:0.8rem;margin-bottom:0.6rem;">Recomandate similare</h4>
+        <div style="display:flex;gap:0.5rem;overflow-x:auto;padding-bottom:0.3rem;" id="detailRelated"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay" id="authModal">
+    <div class="auth-modal">
+      <div class="am-header">
+        <h2>Bun venit in Aninaxia</h2>
+        <button class="am-close" data-tip="Inchide" onclick="document.getElementById('authModal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="am-tabs">
+        <span class="active" data-tab="login" onclick="switchAuthTab('login')">Login</span>
+        <span data-tab="register" onclick="switchAuthTab('register')">Inregistrare</span>
+      </div>
+      <div id="authLogin">
+        <div class="am-field"><label>Email</label><input type="email" placeholder="email@exemplu.ro" id="loginEmail"></div>
+        <div class="am-field"><label>Parola</label><input type="password" placeholder="parola" id="loginPass"></div>
+        <button class="am-btn" onclick="handleLogin()">Autentificare</button>
+        <div class="am-divider">sau</div>
+        <div class="am-social"><button>&#128247; Google</button><button>&#128100; Facebook</button></div>
+      </div>
+      <div id="authRegister" style="display:none;">
+        <div class="am-field"><label>Nume</label><input type="text" placeholder="Nume complet"></div>
+        <div class="am-field"><label>Email</label><input type="email" placeholder="email@exemplu.ro"></div>
+        <div class="am-field"><label>Parola</label><input type="password" placeholder="minim 8 caractere"></div>
+        <div class="am-field"><label>Confirma parola</label><input type="password"></div>
+        <button class="am-btn" onclick="alert('Cont creat! Acum te poti autentifica.');switchAuthTab('login')">Creeaza cont</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER OVERLAY -->
+  <div class="player-overlay" id="playerOverlay">
+    <button class="player-close" onclick="closePlayer()">&times;</button>
+    <div class="player-screen" id="playerScreen">
+      <div class="big-play" onclick="simulatePlay()">&#9654;</div>
+      <div class="player-title" id="playerTitle">Apasa play pentru a reda</div>
+    </div>
+    <div class="player-controls">
+      <button id="pcPlayBtn" onclick="simulatePlay()">&#9654;</button>
+      <span class="pc-time" id="pcTime">0:00 / 2:30</span>
+      <div class="pc-bar"><div class="pc-fill" id="pcFill" style="width:35%"></div></div>
+      <button onclick="alert('Calitate: Automata')">&#9881;</button>
+      <button onclick="toggleFullscreen()">&#9974;</button>
+      <button onclick="closePlayer()">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS PANEL -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="np-header"><h3>Notificari</h3><span onclick="document.getElementById('notifPanel').classList.remove('open')">Marcat ca citite</span></div>
+    <div class="notif-item"><div class="ni-dot"></div><div class="ni-text"><strong>Dune: Part Two</strong><span>Acum disponibil in 4K</span></div></div>
+    <div class="notif-item"><div class="ni-dot"></div><div class="ni-text"><strong>Fallout S2</strong><span>Noul sezon a fost adaugat</span></div></div>
+    <div class="notif-item"><div class="ni-dot"></div><div class="ni-text"><strong>Shogun</strong><span>Episodul 8 a aparut</span></div></div>
+    <div class="notif-item"><div style="width:8px;height:8px;border-radius:50%;background:transparent;margin-top:5px;flex-shrink:0;"></div><div class="ni-text"><strong>Bun venit!</strong><span>Exploreaza platforma Aninaxia</span></div></div>
+  </div>
+
+  <!-- SHORTCUTS MODAL -->
+  <div class="shortcuts-modal" id="shortcutsModal">
+    <h2>Scurtaturi tastatura</h2>
+    <div class="sc-grid">
+      <div class="sc-row"><span class="sc-desc">Play / Pause</span><span class="sc-key">Space</span></div>
+      <div class="sc-row"><span class="sc-desc">Fullscreen</span><span class="sc-key">F</span></div>
+      <div class="sc-row"><span class="sc-desc">Mute</span><span class="sc-key">M</span></div>
+      <div class="sc-row"><span class="sc-desc">Inainte 10s</span><span class="sc-key">&rarr;</span></div>
+      <div class="sc-row"><span class="sc-desc">Inapoi 10s</span><span class="sc-key">&larr;</span></div>
+      <div class="sc-row"><span class="sc-desc">Volum sus/jos</span><span class="sc-key">&uarr; / &darr;</span></div>
+      <div class="sc-row"><span class="sc-desc">Cautare</span><span class="sc-key">/</span></div>
+      <div class="sc-row"><span class="sc-desc">Scurtaturi</span><span class="sc-key">?</span></div>
+    </div>
+    <div class="sc-close" onclick="document.getElementById('shortcutsModal').classList.remove('open')">Inchide</div>
+  </div>
+
+  <script>
+    // SIDEBAR TOGGLE
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const mainContent = document.getElementById('mainContent');
+
+    function openSidebar() { sidebar.classList.remove('closed'); toggleBtn.classList.add('shifted'); mainContent.classList.add('shifted'); }
+    function closeSidebar() { sidebar.classList.add('closed'); toggleBtn.classList.remove('shifted'); mainContent.classList.remove('shifted'); }
+    toggleBtn.addEventListener('click', () => { sidebar.classList.contains('closed') ? openSidebar() : closeSidebar(); });
+    closeBtn.addEventListener('click', closeSidebar);
+
+    // SCROLL PROGRESS
+    const scrollProgress = document.getElementById('scrollProgress');
+    window.addEventListener('scroll', () => {
+      const p = document.documentElement.scrollHeight - window.innerHeight > 0
+        ? (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 : 0;
+      scrollProgress.style.width = p + '%';
+    });
+
+    // BACK TO TOP
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => backToTop.classList.toggle('visible', window.scrollY > 500));
+    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // SCROLL REVEAL
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ===== HERO BANNER AUTO-ROTATION =====
+    const slides = document.querySelectorAll('.hero-slide');
+    const dots = document.querySelectorAll('.hero-dot');
+    const prevBtn = document.getElementById('heroPrev');
+    const nextBtn = document.getElementById('heroNext');
+    let currentSlide = 0;
+    let autoTimer = null;
+    const AUTO_INTERVAL = 6000;
+
+    function goToSlide(index) {
+      slides.forEach(s => s.classList.remove('active'));
+      dots.forEach(d => d.classList.remove('active'));
+      slides[index].classList.add('active');
+      dots[index].classList.add('active');
+      currentSlide = index;
+      resetAutoTimer();
+    }
+
+    function nextSlide() {
+      goToSlide((currentSlide + 1) % slides.length);
+    }
+
+    function prevSlide() {
+      goToSlide((currentSlide - 1 + slides.length) % slides.length);
+    }
+
+    function resetAutoTimer() {
+      if (autoTimer) clearInterval(autoTimer);
+      autoTimer = setInterval(nextSlide, AUTO_INTERVAL);
+    }
+
+    nextBtn.addEventListener('click', nextSlide);
+    prevBtn.addEventListener('click', prevSlide);
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => goToSlide(parseInt(dot.dataset.index)));
+    });
+
+    // Pause auto-rotation on hover
+    const heroBanner = document.getElementById('heroBanner');
+    heroBanner.addEventListener('mouseenter', () => { if (autoTimer) clearInterval(autoTimer); });
+    heroBanner.addEventListener('mouseleave', resetAutoTimer);
+
+    resetAutoTimer();
+
+    // ===== FAZA 3: HOVER MODAL =====
+    const MOVIE_DATA = {
+      "Dune: Part Two": { year: "2024", rating: "8.9", genres: ["SF","Actiune","Aventura"], desc: "Paul Atreus continua calatoria pe Arrakis, alaturandu-se poporului Fremen pentru a lupta impotriva Imperiului.", bg: "#2d1b4e", emoji: "&#127916;" },
+      "Shogun": { year: "2024", rating: "9.1", genres: ["Drama","Istoric"], desc: "In Japonia secolului XVII, un marinar englez naufragiat devine piesa de joc intr-un razboi politic.", bg: "#1b3a2e", emoji: "&#127902;" },
+      "Alien: Romulus": { year: "2024", rating: "8.2", genres: ["Horror","SF"], desc: "O noua echipa de colonisti descopera un secret terifiant intr-o statie spatiala abandonata.", bg: "#3a1b1b", emoji: "&#128125;" },
+      "The Last of Us": { year: "2023", rating: "8.7", genres: ["Actiune","Drama"], desc: "Intr-o lume post-apocaliptica, Joel si Ellie calatoresc printr-o America devastata.", bg: "#1b2d3a", emoji: "&#128128;" },
+      "House of Dragon": { year: "2024", rating: "8.6", genres: ["Fantasy","Drama"], desc: "Casa Targaryen se rupe in doua in timpul unui razboi civil sangeros pentru Tronul de Fier.", bg: "#2e1b3a", emoji: "&#127769;" },
+      "Fallout": { year: "2024", rating: "8.8", genres: ["SF","Actiune","Aventura"], desc: "In urma unui holocaust nuclear, supravietuitorii ies din adaposturi pentru a descoperi o lume devastata.", bg: "#1b3a2d", emoji: "&#128481;" },
+      "Deadpool 3": { year: "2024", rating: "8.4", genres: ["Actiune","Comedie"], desc: "Deadpool calatoreste prin multivers alaturi de Wolverine intr-o aventura care va schimba istoria Marvel.", bg: "#1e2a3a", emoji: "&#127910;" },
+      "Inside Out 2": { year: "2024", rating: "8.1", genres: ["Animatie","Comedie"], desc: "Riley intra in adolescenta iar sediul central primit noi emotii care dau totul peste cap.", bg: "#2a1e2a", emoji: "&#127871;" },
+      "Kingdom 4": { year: "2024", rating: "7.8", genres: ["Actiune","Istoric"], desc: "Epicul japonez continua cu o noua poveste despre samurai, onoare si razboi in Japonia feudala.", bg: "#1e2a1e", emoji: "&#128063;" },
+      "Twisters": { year: "2024", rating: "7.5", genres: ["Actiune","Aventura"], desc: "O echipa de vânatori de furtuni se confrunta cu cele mai violente tornade din istorie.", bg: "#2a1e14", emoji: "&#127787;" },
+      "Beetlejuice 2": { year: "2024", rating: "7.9", genres: ["Comedie","Fantasy"], desc: "Dupa o tragedie familiala, trei generatii se intorc in casa din Winter River unde Beetlejuice îi asteapta.", bg: "#141e2a", emoji: "&#128302;" },
+      "Kung Fu Panda 4": { year: "2024", rating: "7.7", genres: ["Animatie","Actiune"], desc: "Po se pregateste sa devina lider spiritual in timp ce o noua amenintare apare in Valea Pacii.", bg: "#2a2a14", emoji: "&#128052;" },
+      "Top Boy": { year: "2023", rating: "8.3", genres: ["Crima","Drama"], desc: "Povestea traficantilor de droguri din cartierul londonez Hackney, plina de tradari si lupta pentru putere.", bg: "#3a2e1b", emoji: "&#127937;" },
+      "Planet Earth III": { year: "2023", rating: "9.3", genres: ["Documentar","Natura"], desc: "Calatoreste in cele mai indepartate colturi ale planetei pentru a descoperi minunile naturii.", bg: "#1b2e2e", emoji: "&#127758;" },
+      "The Witcher": { year: "2023", rating: "8.2", genres: ["Fantasy","Actiune"], desc: "Geralt din Rivia navigheaza printr-un continent devastat de razboi, magie si monstruozitati.", bg: "#1a2a3a", emoji: "&#127769;" },
+      "Rings of Power": { year: "2024", rating: "7.6", genres: ["Fantasy","Aventura"], desc: "Mii de ani inainte de Fratia Inelului, eroii din Epoca a Doua lupta impotriva intoarcerii raului.", bg: "#2a1a3a", emoji: "&#128081;" },
+      "Foundation": { year: "2023", rating: "8.1", genres: ["SF","Drama"], desc: "Exilatii matematicianului Hari Seldon încearca sa salveze cunoasterea galactică de la colaps.", bg: "#1a2a1a", emoji: "&#127794;" },
+      "Blue Eye Samurai": { year: "2023", rating: "8.9", genres: ["Animatie","Actiune"], desc: "O razboinica pe Drumul razbunarii prin Japonia Edo poarta o lupta personala pentru dreptate.", bg: "#2a2a1a", emoji: "&#128170;" },
+      "One Piece": { year: "2023", rating: "8.5", genres: ["Aventura","Actiune"], desc: "Luffy si echipa sa pornesc in cautarea celui mai mare comandament din lume intr-o aventura epica.", bg: "#1a1a2a", emoji: "&#128420;" },
+      "Ahsoka": { year: "2023", rating: "7.9", genres: ["SF","Aventura"], desc: "Fosta Jedi Ahsoka Tano investigheaza o amenintare care pune in pericol viitorul galaxiei.", bg: "#2a1a1a", emoji: "&#127910;" },
+      "Ted Lasso": { year: "2023", rating: "8.8", genres: ["Comedie","Sport"], desc: "Un antrenor american de fotbal american este angajat sa antreneze o echipa de fotbal engleza.", bg: "#2e2e1a", emoji: "&#128513;" },
+      "Palm Royale": { year: "2024", rating: "7.4", genres: ["Comedie","Drama"], desc: "O poveste despre ambitie, prietenie si cautarea apartenentei in inalta societate.", bg: "#1a2e1a", emoji: "&#127917;" },
+      "Gladiator 2": { year: "2024", rating: "-", genres: ["Actiune","Istoric"], desc: "Continua epopeea Romei antice cu o noua generatie de gladiatori care lupta pentru libertate.", bg: "#1a1a2e", emoji: "&#128196;" },
+      "Squid Game S2": { year: "2024", rating: "-", genres: ["Thriller","Drama"], desc: "Jocurile mortale revin cu o noua serie de provocari si secrete cutremuratoare.", bg: "#2e1a1a", emoji: "&#127877;" },
+      "Moana 2": { year: "2024", rating: "-", genres: ["Animatie","Aventura"], desc: "Moana porneste intr-o noua calatorie peste ocean pentru a descoperi insule legendare.", bg: "#1a2e1a", emoji: "&#128051;" },
+      "Venom 3": { year: "2024", rating: "-", genres: ["Actiune","SF"], desc: "Simbiotul preferat al tuturor se intoarce pentru o noua aventura plina de actiune si haos.", bg: "#2e2e1a", emoji: "&#129313;" },
+      "The Boy and the Heron": { year: "2024", rating: "8.3", genres: ["Animatie","Fantasy"], desc: "Un baiat care isi pierde mama descopera o lume magica prin intermediul unui stârc vorbitor.", bg: "#1a1a2e", emoji: "&#127769;" }
+    };
+
+    const hoverModal = document.getElementById('hoverModal');
+    const hmTitle = document.getElementById('hmTitle');
+    const hmMeta = document.getElementById('hmMeta');
+    const hmDesc = document.getElementById('hmDesc');
+    const hmThumb = document.getElementById('hmThumb');
+    let hoverTimeout = null;
+    let activeCard = null;
+
+    function getCardTitle(card) {
+      const h4 = card.querySelector('.info h4');
+      return h4 ? h4.textContent.trim() : '';
+    }
+
+    function positionModal(card) {
+      const rect = card.getBoundingClientRect();
+      const modalW = 280;
+      let left = rect.left + (rect.width - modalW) / 2;
+      if (left < 10) left = 10;
+      if (left + modalW > window.innerWidth - 10) left = window.innerWidth - modalW - 10;
+
+      const spaceAbove = rect.top;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      let top;
+
+      if (spaceBelow > 350 || spaceBelow >= spaceAbove) {
+        top = rect.bottom + 4;
+      } else {
+        top = rect.top - 230;
+      }
+
+      hoverModal.style.left = left + 'px';
+      hoverModal.style.top = top + 'px';
+    }
+
+    document.addEventListener('mouseover', (e) => {
+      const card = e.target.closest('.content-card');
+      if (!card || card.closest('.hero-content')) return;
+
+      const title = getCardTitle(card);
+      const data = MOVIE_DATA[title];
+      if (!data) return;
+
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+      activeCard = card;
+
+      hoverTimeout = setTimeout(() => {
+        hmTitle.textContent = title;
+        hmMeta.innerHTML = `<span class="hm-rating">&#9733; ${data.rating}</span><span>${data.year}</span>${data.genres.map(g => `<span class="hm-tag">${g}</span>`).join('')}`;
+        hmDesc.textContent = data.desc;
+        hmThumb.style.background = data.bg;
+        hmThumb.innerHTML = `<div class="hm-play"><span>&#9654;</span></div><span style="font-size:1.8rem;opacity:0.3">${data.emoji}</span>`;
+
+        positionModal(card);
+        hoverModal.classList.add('visible');
+      }, 400);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      const card = e.target.closest('.content-card');
+      if (!card) return;
+
+      const related = e.relatedTarget;
+      if (related && (related.closest('.hover-modal') || related.closest('.content-card'))) return;
+
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+      setTimeout(() => {
+        if (!hoverModal.matches(':hover')) {
+          hoverModal.classList.remove('visible');
+          activeCard = null;
+        }
+      }, 200);
+    });
+
+    hoverModal.addEventListener('mouseenter', () => {
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+    });
+
+    hoverModal.addEventListener('mouseleave', (e) => {
+      if (!activeCard || !document.contains(activeCard)) {
+        hoverModal.classList.remove('visible');
+        return;
+      }
+      const cardRect = activeCard.getBoundingClientRect();
+      const modalRect = hoverModal.getBoundingClientRect();
+      if (!(e.clientX >= cardRect.left && e.clientX <= cardRect.right &&
+            e.clientY >= cardRect.top && e.clientY <= cardRect.bottom)) {
+        hoverModal.classList.remove('visible');
+      }
+    });
+
+    // ===== FAZA 5: SEARCH, WATCHLIST, RATINGS =====
+
+    // Inject card actions (thumbs)
+    document.querySelectorAll('.content-card .info').forEach(info => {
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      actions.innerHTML = '<button class="thumbs-up" title="Recomand">&#128077;</button><button class="thumbs-down" title="Nu imi place">&#128078;</button><button class="add-wl" title="Adauga in lista mea">+</button>';
+      info.appendChild(actions);
+    });
+
+    // Rating thumbs
+    document.querySelectorAll('.thumbs-up').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        btn.classList.toggle('liked');
+        if (btn.classList.contains('liked')) {
+          btn.nextElementSibling.classList.remove('disliked');
+        }
+      });
+    });
+    document.querySelectorAll('.thumbs-down').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        btn.classList.toggle('disliked');
+        if (btn.classList.contains('disliked')) {
+          btn.previousElementSibling.classList.remove('liked');
+        }
+      });
+    });
+
+    // Watchlist
+    let watchlist = JSON.parse(localStorage.getItem('wl_items') || '[]');
+    const wlBadge = document.getElementById('wlBadge');
+    const wlToast = document.getElementById('wlToast');
+    const myListSection = document.getElementById('myListSection');
+    const myListRow = document.getElementById('myListRow');
+    const wlCount = document.getElementById('wlCount');
+    const clearWlBtn = document.getElementById('clearWlBtn');
+    let wlToastTimer = null;
+
+    function updateWatchlistUI() {
+      wlBadge.textContent = watchlist.length;
+      if (watchlist.length > 0) {
+        myListSection.style.display = '';
+        wlCount.textContent = '(' + watchlist.length + ')';
+        myListRow.innerHTML = watchlist.map(title => {
+          const data = MOVIE_DATA[title] || { bg: '#1a1a2e', emoji: '&#127916;' };
+          return '<div class="content-card" data-title="' + title + '">' +
+            '<div class="poster" style="background:' + data.bg + ';">' + data.emoji +
+              '<div class="play-overlay"><div class="play-icon">&#9654;</div></div>' +
+            '</div>' +
+            '<div class="info"><h4>' + title + '</h4><div class="meta-row"><span>In lista ta</span></div></div></div>';
+        }).join('');
+      } else {
+        myListSection.style.display = 'none';
+      }
+    }
+
+    function showWlToast(msg) {
+      wlToast.innerHTML = msg;
+      wlToast.classList.add('visible');
+      if (wlToastTimer) clearTimeout(wlToastTimer);
+      wlToastTimer = setTimeout(() => wlToast.classList.remove('visible'), 2000);
+    }
+
+    document.querySelectorAll('.add-wl').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.content-card');
+        const title = card ? card.querySelector('.info h4').textContent.trim() : '';
+        if (!title) return;
+        const idx = watchlist.indexOf(title);
+        if (idx === -1) {
+          watchlist.push(title);
+          localStorage.setItem('wl_items', JSON.stringify(watchlist));
+          updateWatchlistUI();
+          showWlToast('Adaugat in <span>Lista mea</span>');
+        } else {
+          watchlist.splice(idx, 1);
+          localStorage.setItem('wl_items', JSON.stringify(watchlist));
+          updateWatchlistUI();
+          showWlToast('Sters din <span>Lista mea</span>');
+        }
+      });
+    });
+
+    clearWlBtn.addEventListener('click', () => {
+      watchlist = [];
+      localStorage.setItem('wl_items', JSON.stringify(watchlist));
+      updateWatchlistUI();
+      showWlToast('Lista mea a fost <span>golita</span>');
+    });
+
+    updateWatchlistUI();
+
+    // Search
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    let searchTimeout = null;
+
+    searchInput.addEventListener('input', () => {
+      if (searchTimeout) clearTimeout(searchTimeout);
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) { searchResults.classList.remove('visible'); return; }
+      searchTimeout = setTimeout(() => {
+        const matches = Object.keys(MOVIE_DATA).filter(t => t.toLowerCase().includes(q)).slice(0, 8);
+        if (matches.length === 0) {
+          searchResults.innerHTML = '<div style="padding:1rem;text-align:center;color:rgba(255,255,255,0.3);font-size:0.85rem;">Niciun rezultat</div>';
+        } else {
+          searchResults.innerHTML = matches.map(t => {
+            const d = MOVIE_DATA[t];
+            return '<div class="sr-item" data-title="' + t + '">' +
+              '<div class="thumb" style="background:' + d.bg + ';">' + d.emoji + '</div>' +
+              '<div class="text"><strong>' + t + '</strong><span>' + d.year + ' &middot; ' + d.genres.slice(0,2).join(', ') + '</span></div>' +
+            '</div>';
+          }).join('');
+          searchResults.querySelectorAll('.sr-item').forEach(item => {
+            item.addEventListener('click', () => {
+              const title = item.dataset.title;
+              const card = document.querySelector('.content-card .info h4');
+              if (card) {
+                document.querySelectorAll('.content-card').forEach(c => {
+                  if (c.querySelector('.info h4').textContent.trim() === title) {
+                    c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                });
+              }
+              searchInput.value = title;
+              searchResults.classList.remove('visible');
+            });
+          });
+        }
+        searchResults.classList.add('visible');
+      }, 200);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-wrap')) {
+        searchResults.classList.remove('visible');
+      }
+    });
+
+    // Auto-hide header on scroll
+    let lastScrollY = window.scrollY;
+    const stickyHeader = document.getElementById('stickyHeader');
+    window.addEventListener('scroll', () => {
+      const currentY = window.scrollY;
+      if (currentY > lastScrollY && currentY > 100) {
+        stickyHeader.classList.add('hidden');
+      } else {
+        stickyHeader.classList.remove('hidden');
+      }
+      lastScrollY = currentY;
+    }, { passive: true });
+
+    // ===== PAGE ROUTING =====
+    function navigateTo(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(pageId);
+      if (target) {
+        target.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        closeSidebar();
+        // Re-run reveal observer on new page
+        target.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+      }
+    }
+
+    // Sidebar navigation
+    document.querySelectorAll('.sidebar-menu a[data-page]').forEach(link => {
+      link.addEventListener('click', () => navigateTo(link.dataset.page));
+    });
+
+    // Footer links navigation
+    document.querySelectorAll('footer a[data-page]').forEach(link => {
+      link.addEventListener('click', () => navigateTo(link.dataset.page));
+    });
+
+    // Menu active highlight
+    document.querySelectorAll('.sidebar-menu a[data-page]').forEach(link => {
+      link.addEventListener('click', function() {
+        document.querySelectorAll('.sidebar-menu a').forEach(a => a.style.borderLeftColor = 'transparent');
+        this.style.borderLeftColor = '#e94560';
+      });
+    });
+
+    // Cautare page search
+    function searchCategory(genre) {
+      const container = document.getElementById('cautareResults');
+      const results = Object.entries(MOVIE_DATA).filter(([_,d]) => d.genres.includes(genre));
+      if (results.length === 0) { container.innerHTML = '<p style="color:rgba(255,255,255,0.3);text-align:center;padding:2rem;width:100%;">Niciun rezultat</p>'; return; }
+      container.innerHTML = results.map(([t,d]) => '<div class="content-card" style="flex:none;"><div class="poster" style="background:'+d.bg+';">'+d.emoji+'<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>'+t+'</h4><div class="meta-row"><span>'+d.year+' &middot; '+d.rating+'</span></div></div></div>').join('');
+    }
+    function advancedSearch() {
+      const type = document.getElementById('asType').value;
+      const genre = document.getElementById('asGenre').value;
+      const year = document.getElementById('asYear').value;
+      const rating = document.getElementById('asRating').value;
+      let results = Object.keys(MOVIE_DATA);
+      if (genre) results = results.filter(t => MOVIE_DATA[t].genres.includes(genre));
+      if (year) results = results.filter(t => MOVIE_DATA[t].year === year);
+      if (rating) {
+        const min = parseInt(rating);
+        results = results.filter(t => parseFloat(MOVIE_DATA[t].rating) >= min);
+      }
+      const container = document.getElementById('cautareResults');
+      if (results.length === 0) { container.innerHTML = '<p style="color:rgba(255,255,255,0.3);grid-column:1/-1;text-align:center;padding:2rem;">Niciun rezultat pentru filtrele aplicate</p>'; return; }
+      container.innerHTML = results.map(t => { const d = MOVIE_DATA[t]; return '<div class="content-card" style="flex:none;"><div class="poster" style="background:'+d.bg+';">'+d.emoji+'<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>'+t+'</h4><div class="meta-row"><span>'+d.year+' &middot; '+d.genres.slice(0,2).join(', ')+'</span></div></div></div>'; }).join('');
+    }
+    const cautareInput = document.getElementById('cautareInput');
+    if (cautareInput) {
+      cautareInput.addEventListener('input', function() {
+        const q = this.value.trim().toLowerCase();
+        const container = document.getElementById('cautareResults');
+        if (!q) { container.innerHTML = ''; return; }
+        const matches = Object.keys(MOVIE_DATA).filter(t => t.toLowerCase().includes(q));
+        if (matches.length === 0) {
+          container.innerHTML = '<p style="color:rgba(255,255,255,0.3);">Niciun rezultat</p>';
+        } else {
+          container.innerHTML = matches.map(t => {
+            const d = MOVIE_DATA[t];
+            return '<div class="content-card" style="flex:none;"><div class="poster" style="background:' + d.bg + ';">' + d.emoji + '<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>' + t + '</h4><div class="meta-row"><span>' + d.year + ' &middot; ' + d.genres.slice(0,2).join(', ') + '</span></div></div></div>';
+          }).join('');
+        }
+      });
+    }
+
+    // Content page filter tabs + grid population
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        const parent = this.closest('.filter-tabs') || this.parentElement;
+        parent.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Populate content grid when content page is visited
+    const contentGrid = document.getElementById('contentGrid');
+    if (contentGrid) {
+      const contentTitles = Object.keys(MOVIE_DATA);
+      contentGrid.innerHTML = contentTitles.map(t => {
+        const d = MOVIE_DATA[t];
+        return '<div class="content-card" style="flex:none;"><div class="poster" style="background:' + d.bg + ';">' + d.emoji + '<div class="play-overlay"><div class="play-icon">&#9654;</div></div></div><div class="info"><h4>' + t + '</h4><div class="meta-row"><span>' + d.year + ' &middot; ' + d.genres.slice(0,2).join(', ') + '</span></div></div></div>';
+      }).join('');
+      // Inject card actions for the generated cards
+      document.querySelectorAll('#page-content .content-card .info').forEach(info => {
+        if (!info.querySelector('.card-actions')) {
+          const actions = document.createElement('div');
+          actions.className = 'card-actions';
+          actions.innerHTML = '<button class="thumbs-up" title="Recomand">&#128077;</button><button class="thumbs-down" title="Nu imi place">&#128078;</button><button class="add-wl" title="Adauga in lista mea">+</button>';
+          info.appendChild(actions);
+          // Bind events
+          actions.querySelector('.thumbs-up').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('liked'); if (this.classList.contains('liked')) this.nextElementSibling.classList.remove('disliked'); });
+          actions.querySelector('.thumbs-down').addEventListener('click', function(e) { e.stopPropagation(); this.classList.toggle('disliked'); if (this.classList.contains('disliked')) this.previousElementSibling.classList.remove('liked'); });
+          actions.querySelector('.add-wl').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const card = this.closest('.content-card');
+            const title = card ? card.querySelector('.info h4').textContent.trim() : '';
+            if (!title) return;
+            const idx = watchlist.indexOf(title);
+            if (idx === -1) { watchlist.push(title); localStorage.setItem('wl_items', JSON.stringify(watchlist)); updateWatchlistUI(); showWlToast('Adaugat in <span>Lista mea</span>'); }
+            else { watchlist.splice(idx, 1); localStorage.setItem('wl_items', JSON.stringify(watchlist)); updateWatchlistUI(); showWlToast('Sters din <span>Lista mea</span>'); }
+          });
+        }
+      });
+    }
+
+    // Settings toggles
+    document.querySelectorAll('.toggle-switch').forEach(tog => {
+      tog.addEventListener('click', function() {
+        this.classList.toggle('on');
+      });
+    });
+
+    // Addon marketplace install
+    document.querySelectorAll('.ac-status.available').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.textContent = 'Instalat';
+        this.className = 'ac-status installed';
+      });
+    });
+  // ===== AUTH FUNCTIONS =====
+    function switchAuthTab(tab) {
+      document.querySelectorAll('.am-tabs span').forEach(t => t.classList.remove('active'));
+      document.querySelector('.am-tabs span[data-tab="' + tab + '"]').classList.add('active');
+      document.getElementById('authLogin').style.display = tab === 'login' ? '' : 'none';
+      document.getElementById('authRegister').style.display = tab === 'register' ? '' : 'none';
+    }
+    function handleLogin() {
+      const email = document.getElementById('loginEmail').value;
+      if (!email) { alert('Introdu email'); return; }
+      alert('Bine ai venit!');
+      document.getElementById('authModal').classList.remove('open');
+    }
+    function closePlayer() {
+      document.getElementById('playerOverlay').classList.remove('open');
+      document.getElementById('pcPlayBtn').innerHTML = '&#9654;';
+    }
+    function simulatePlay() {
+      const btn = document.getElementById('pcPlayBtn');
+      if (btn.innerHTML.includes('&#9654;')) {
+        btn.innerHTML = '&#10074;&#10074;';
+        document.getElementById('playerTitle').textContent = 'Redare in curs...';
+      } else {
+        btn.innerHTML = '&#9654;';
+        document.getElementById('playerTitle').textContent = 'Pauza';
+      }
+    }
+    function toggleFullscreen() {
+      const el = document.getElementById('playerScreen');
+      if (document.fullscreenElement) document.exitFullscreen();
+      else el.requestFullscreen().catch(() => {});
+    }
+    function closeDropdowns() {
+      document.getElementById('profileDropdown').classList.remove('open');
+      document.getElementById('notifPanel').classList.remove('open');
+    }
+
+    // Profile dropdown toggle
+    document.getElementById('profileBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById('profileDropdown').classList.toggle('open');
+      document.getElementById('notifPanel').classList.remove('open');
+    });
+
+    // Notification button toggle
+    document.getElementById('notifBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.getElementById('notifPanel').classList.toggle('open');
+      document.getElementById('profileDropdown').classList.remove('open');
+    });
+
+    // Close dropdowns on click outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.profile-wrap') && !e.target.closest('#notifBtn')) {
+        closeDropdowns();
+      }
+    });
+
+
+    // Scroll to top button
+    window.addEventListener('scroll', function() {
+      const btn = document.getElementById('scrollTopBtn');
+      if (!btn) return;
+      btn.style.display = window.scrollY > 400 ? 'block' : 'none';
+    });
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === '?') {
+        e.preventDefault();
+        document.getElementById('shortcutsModal').classList.toggle('open');
+      }
+      if (e.key === '/' && !e.ctrlKey) {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+      if (e.key === 'Escape') {
+        closeDropdowns();
+        document.getElementById('shortcutsModal').classList.remove('open');
+        if (document.getElementById('playerOverlay').classList.contains('open')) closePlayer();
+      }
+    });
+
+    // Auth modal trigger - click profile when not logged in
+    let loggedIn = false;
+    document.getElementById('profileBtn').addEventListener('dblclick', function() {
+      if (!loggedIn) {
+        document.getElementById('authModal').classList.add('open');
+      }
+    });
+
+    function refreshCW() {
+      const cw = getContinueWatching();
+      const row = document.getElementById('cwRow');
+      if (!row) return false;
+      if (cw.length === 0) { row.innerHTML = '<p style="padding:1rem 0;color:rgba(255,255,255,0.3);font-size:0.85rem;">Niciun continut in curs. Reda ceva pentru a incepe!</p>'; return false; }
+      row.innerHTML = cw.map(([title, _]) => {
+        const d = MOVIE_DATA[title];
+        if (!d) return '';
+        const idx = Math.floor(Math.random()*60);
+        return '<div class="content-card" style="flex:none;"><div class="poster" style="background:'+d.bg+';">'+d.emoji+'<div class="play-overlay"><div class="play-icon">&#9654;</div></div><div class="progress-bar" style="width:'+idx+'%;"></div></div><div class="info"><h4>'+title+'</h4><div class="meta-row"><span>'+d.year+' &middot; '+d.genres[0]+'</span><div class="card-actions" style="display:flex;gap:0.3rem;"><button class="add-wl" data-title="'+title+'" onclick="toggleWatchlist(this)">+</button></div></div></div></div>';
+      }).join('');
+      return false;
+    }
+
+
+
+
+    // Tooltip on hover for buttons
+    document.addEventListener('mouseover', function(e) {
+      const el = e.target.closest('[data-tip]');
+      if (el) {
+        const tip = document.getElementById('tooltip');
+        tip.textContent = el.getAttribute('data-tip');
+        tip.style.opacity = '1';
+        const rect = el.getBoundingClientRect();
+        tip.style.left = (rect.left + rect.width / 2 - tip.offsetWidth / 2) + 'px';
+        tip.style.top = (rect.top - tip.offsetHeight - 8) + 'px';
+      }
+    });
+    document.addEventListener('mouseout', function(e) {
+      if (e.target.closest('[data-tip]')) {
+        document.getElementById('tooltip').style.opacity = '0';
+      }
+    });
+    // Context menu on cards
+    let contextTitle = '';
+    document.addEventListener('contextmenu', function(e) {
+      const card = e.target.closest('.content-card');
+      if (card) {
+        e.preventDefault();
+        contextTitle = card.querySelector('.info h4')?.textContent || '';
+        const cm = document.getElementById('contextMenu');
+        cm.style.display = 'block';
+        cm.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        cm.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+      }
+    });
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#contextMenu')) {
+        document.getElementById('contextMenu').style.display = 'none';
+      }
+    });
+    function contextAction(action) {
+      document.getElementById('contextMenu').style.display = 'none';
+      if (action === 'play' && contextTitle) {
+        document.getElementById('playerTitle').textContent = 'Redare: ' + contextTitle;
+        document.getElementById('playerOverlay').classList.add('open');
+      } else if (action === 'list' && contextTitle) {
+        let wl = JSON.parse(localStorage.getItem('wl') || '[]');
+        if (!wl.includes(contextTitle)) { wl.push(contextTitle); localStorage.setItem('wl', JSON.stringify(wl)); }
+        showToast(contextTitle + ' salvat!', 'success');
+      } else {
+        showToast(contextTitle + ' - ' + action, 'info');
+      }
+    }
+
+
+    function toggleHighContrast(btn) {
+      document.body.classList.toggle('high-contrast');
+      btn.textContent = document.body.classList.contains('high-contrast') ? 'Activat' : 'Dezactivat';
+      localStorage.setItem('highContrast', document.body.classList.contains('high-contrast'));
+      showToast('Mod contrast ' + (document.body.classList.contains('high-contrast') ? 'activat' : 'dezactivat'), 'success');
+    }
+    function setFontSize(size, btn) {
+      btn.parentElement.querySelectorAll('.qs-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.documentElement.style.fontSize = size === 'small' ? '14px' : size === 'large' ? '18px' : '16px';
+      localStorage.setItem('fontSize', size);
+    }
+
+    function shareTo(platform) {
+      document.getElementById('shareModal').classList.remove('open');
+      const msg = 'Vizioneaza pe Aninaxia!';
+      const url = window.location.href;
+      const links = { facebook: 'https://facebook.com/sharer/sharer.php?u=', twitter: 'https://twitter.com/intent/tweet?text=', whatsapp: 'https://wa.me/?text=', telegram: 'https://t.me/share/url?url=' };
+      if (platform === 'copy') { navigator.clipboard.writeText(url).then(() => showToast('Link copiat!', 'success')); return; }
+      window.open(links[platform] + encodeURIComponent(msg + ' ' + url), '_blank', 'width=600,height=400');
+    }
+    // PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('pwaInstall').style.display = 'flex';
+    });
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() { deferredPrompt = null; });
+      }
+      document.getElementById('pwaInstall').style.display = 'none';
+    }
+    // Cookie consent
+    function acceptCookies() {
+      localStorage.setItem('cookies_accepted', 'true');
+      document.getElementById('cookieConsent').style.display = 'none';
+    }
+    if (!localStorage.getItem('cookies_accepted')) {
+      document.getElementById('cookieConsent').style.display = 'flex';
+    }
+    // Toast notification system
+    function showToast(message, type) {
+      type = type || 'info';
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colors = { success: '#4ecdc4', error: '#e94560', info: '#0f3460', warning: '#ff6b6b' };
+      toast.style.cssText = 'background:'+colors[type]+';color:white;padding:0.7rem 1.2rem;border-radius:8px;font-size:0.85rem;box-shadow:0 8px 24px rgba(0,0,0,0.4);animation:slideUp 0.3s ease;cursor:pointer;max-width:320px;';
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+      toast.addEventListener('click', () => { toast.remove(); });
+    }
+    // Override alert with toast
+    const origAlert = window.alert;
+    window.alert = function(m) { showToast(m, 'info'); };
+
+    function filterCalendar(view, btn) {
+      document.querySelectorAll('#page-calendar .hero-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      showToast('Filtrat: ' + view, 'success');
+    }
+
+    function clearHistory() {
+      localStorage.removeItem('cw_data');
+      document.getElementById('historyList').innerHTML = '<p style="color:rgba(255,255,255,0.3);padding:1rem;text-align:center;">Istoricul este gol</p>';
+      showToast('Istoric sters', 'success');
+    }
+    // Skeleton shimmer loader
+    function showSkeleton(rowId, count) {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      count = count || 8;
+      row.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        row.innerHTML += '<div class="skeleton-card"><div class="skeleton-poster"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>';
+      }
+      setTimeout(() => { row.innerHTML = row.getAttribute('data-original-html') || row.innerHTML; }, 800);
+    }
+    // Surprise me - random content
+    function surpriseMe() {
+      const titles = Object.keys(MOVIE_DATA);
+      const pick = titles[Math.floor(Math.random() * titles.length)];
+      const d = MOVIE_DATA[pick];
+      document.getElementById('playerTitle').textContent = 'Redare: ' + pick;
+      document.getElementById('playerOverlay').classList.add('open');
+      showToast('Ti-am ales: ' + pick, 'success');
+      trackWatch(pick, 0);
+    }
+    // Continue watching tracker
+    function trackWatch(title, progress) {
+      let cw = JSON.parse(localStorage.getItem('cw_data') || '{}');
+      cw[title] = { progress: progress, watched: Date.now() };
+      localStorage.setItem('cw_data', JSON.stringify(cw));
+    }
+    function getContinueWatching() {
+      const cw = JSON.parse(localStorage.getItem('cw_data') || '{}');
+      return Object.entries(cw).sort((a,b) => b[1].watched - a[1].watched);
+    }
+    // Track a watch when player opens
+    const origPlay = document.getElementById('playerOverlay')?.addEventListener ? null : null;
+    if (!origPlay) {
+      const playerOb = new MutationObserver(function(m) {
+        m.forEach(function(mut) {
+          if (mut.target.classList && mut.target.classList.contains('open')) {
+            const title = document.getElementById('playerTitle')?.textContent?.replace('Redare: ','')?.replace('Redare in curs...','');
+            if (title && title !== 'Pauza') trackWatch(title, Math.floor(Math.random()*60));
+          }
+        });
+      });
+      const po = document.getElementById('playerOverlay');
+      if (po) { po._obs = playerOb; playerOb.observe(po, { attributes: true, attributeFilter: ['class'] }); }
+    }
+
+    // Settings save to localStorage
+    document.querySelectorAll('.setting-item .switch input[type="checkbox"]').forEach(function(cb) {
+      const key = cb.id || 'setting_' + Math.random().toString(36).slice(2);
+      if (!cb.id) cb.id = key;
+      // Load saved state
+      const saved = localStorage.getItem(key);
+      if (saved !== null) cb.checked = saved === 'true';
+      // Save on change
+      cb.addEventListener('change', function() {
+        localStorage.setItem(this.id, this.checked);
+        showToast('Setare salvata', 'success');
+      });
+    });
+    // Content card click - open detail modal
+    document.addEventListener('click', function(e) {
+      const card = e.target.closest('.content-card');
+      if (card && !e.target.closest('.play-icon') && !e.target.closest('.card-actions') && !e.target.closest('.add-wl') && !e.target.closest('.thumbs-up') && !e.target.closest('.thumbs-down')) {
+        const title = card.querySelector('.info h4')?.textContent.trim();
+        if (title && MOVIE_DATA[title]) {
+          const d = MOVIE_DATA[title];
+          document.getElementById('detailTitle').textContent = title;
+          document.getElementById('detailPoster').innerHTML = d.emoji;
+          document.getElementById('detailPoster').style.background = d.bg;
+          document.getElementById('detailMeta').innerHTML = '<span class="hero-badge year">'+d.year+'</span><span class="hero-badge fourk">&#9733; '+d.rating+'</span>'+d.genres.map(g => '<span class="hero-badge maturity" style="border-color:rgba(255,255,255,0.1);color:#aaa;">'+g+'</span>').join('');
+          document.getElementById('detailDesc').textContent = d.desc;
+          document.getElementById('detailModal').classList.add('open');
+          // Related content
+          const relatedContainer = document.getElementById('detailRelated');
+          const related = Object.entries(MOVIE_DATA).filter(([k,v]) => k !== title && v.genres.some(g => d.genres.includes(g))).slice(0,6);
+          relatedContainer.innerHTML = related.map(([t, v]) => '<div style="flex:none;width:70px;height:100px;border-radius:6px;background:'+v.bg+';display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;" title="'+t+'" onclick="document.getElementById(\'detailModal\').classList.remove(\'open\');setTimeout(()=>{document.querySelector(\'.content-card .info h4:contains(\''+t+'\')\')?.click();},100);">'+v.emoji+'</div>').join('');
+        }
+      }
+    });
+
+    // Play buttons on content cards
+    document.querySelectorAll('.content-card .play-icon, .hero-btn.play').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.getElementById('playerOverlay').classList.add('open');
+        const card = this.closest('.content-card');
+        if (card) {
+          const title = card.querySelector('.info h4')?.textContent || 'Continut';
+          document.getElementById('playerTitle').textContent = 'Redare: ' + title;
+        } else {
+          const heroTitle = document.querySelector('.hero-slide.active .hero-title');
+          if (heroTitle) document.getElementById('playerTitle').textContent = 'Redare: ' + heroTitle.textContent;
+        }
+      });
+    });
+
+    // Loading overlay - remove after page load
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        const lo = document.querySelector('.loading-overlay');
+        if (lo) lo.classList.add('hidden');
+      }, 800);
+    });
+    
+    // EPG functions
+    function loadEPG(view) {
+      document.querySelectorAll('#page-live-tv .filter-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+    
+    // Quality selector
+    function selectQuality(el) {
+      el.parentElement.querySelectorAll('.qs-opt').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+    }
+    
+    // Drag & drop upload zone
+    const uploadZone = document.getElementById('uploadZone');
+    if (uploadZone) {
+      uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.borderColor = '#e94560'; uploadZone.style.background = 'rgba(233,69,96,0.04)'; });
+      uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = 'rgba(255,255,255,0.12)'; uploadZone.style.background = 'transparent'; });
+      uploadZone.addEventListener('drop', (e) => { e.preventDefault(); uploadZone.style.borderColor = 'rgba(255,255,255,0.12)'; uploadZone.style.background = 'transparent'; alert('Fisier incarcat cu succes!'); });
+      uploadZone.addEventListener('click', () => alert('Selecteaza fisierul...'));
+    }
+  </script>
+</body>
+</html>
